@@ -12,7 +12,10 @@ FROM node:22-alpine AS web
 WORKDIR /web
 # Install deps first (better layer caching). package-lock.json -> reproducible.
 COPY web/package.json web/package-lock.json ./
-RUN npm ci
+# @vitejs/plugin-react@4 declares a peer range that predates Vite 8, so npm 7+'s
+# strict peer resolution aborts `npm ci`. The plugin builds fine on Vite 8 (the
+# production build confirms it), so relax peer checks for a clean, reproducible install.
+RUN npm ci --legacy-peer-deps
 # Build
 COPY web/ ./
 RUN npm run build      # outputs /web/dist
