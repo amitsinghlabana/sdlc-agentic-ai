@@ -1,0 +1,93 @@
+/* Custom styles that complement Tailwind (loaded via Play CDN).
+   Most styling is done with Tailwind utility classes in app.js;
+   this file covers things utilities can't easily express. */
+
+:root {
+  color-scheme: dark;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html,
+body,
+#root {
+  height: 100%;
+}
+
+body {
+  margin: 0;
+  background-color: #070b16;
+  background-image: radial-gradient(1100px 620px at 85% -8%, rgba(91, 140, 255, 0.18), transparent 60%),
+    radial-gradient(900px 560px at -5% 5%, rgba(33, 199, 199, 0.12), transparent 55%),
+    linear-gradient(rgba(255, 255, 255, 0.025) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(255, 255, 255, 0.025) 1px, transparent 1px);
+  background-size: 100% 100%, 100% 100%, 38px 38px, 38px 38px;
+  background-attachment: fixed;
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+}
+
+::selection {
+  background: rgba(91, 140, 255, 0.35);
+}
+
+/* Slim, themed scrollbars */
+*::-webkit-scrollbar {
+  width: 9px;
+  height: 9px;
+}
+*::-webkit-scrollbar-thumb {
+  background: rgba(120, 140, 190, 0.28);
+  border-radius: 999px;
+}
+*::-webkit-scrollbar-thumb:hover {
+  background: rgba(120, 140, 190, 0.45);
+}
+
+/* Streaming "typing" cursor */
+.sdlc-cursor::after {
+  content: "▍";
+  margin-left: 1px;
+  color: #7aa2ff;
+  animation: sdlc-blink 1s steps(2, start) infinite;
+}
+@keyframes sdlc-blink {
+  50% {
+    opacity: 0;
+  }
+}
+
+/* Card entrance animation */
+.sdlc-enter {
+  animation: sdlc-rise 0.35s ease both;
+}
+@keyframes sdlc-rise {
+  from {
+    opacity: 0;
+    transform: translateY(14px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* Smooth height/opacity for the loop banner */
+.sdlc-fade {
+  animation: sdlc-fade 0.3s ease both;
+}
+@keyframes sdlc-fade {
+  from {
+    opacity: 0;
+    transform: translateY(-4px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+
+

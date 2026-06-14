@@ -1,0 +1,37 @@
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+.venv/
+venv/
+env/
+.pytest_cache/
+
+# Env / secrets
+.env
+# Local SECRETS overrides — keep real tokens/keys here, never commit OR attach to chat
+.env.local
+*.local.ps1
+secrets.local.*
+
+# Runtime provider overrides (mock↔live switch, machine-local state)
+runtime-config.json
+
+# Editors / OS
+.idea/
+.vscode/
+.DS_Store
+Thumbs.db
+
+# Node (if a richer frontend is added later)
+node_modules/
+dist/
+web/dist/
+web/node_modules/
+*.log
+npm-debug.log*
+
+# TypeScript / Vite build caches & stray output (regenerated on every build)
+*.tsbuildinfo
+web/tsout.txt
+

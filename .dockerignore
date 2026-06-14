@@ -1,0 +1,28 @@
+# Keep the build context small and SECRET-FREE.
+# Secrets must never be baked into the image — pass them as runtime env vars.
+.env
+.env.local
+**/.env
+**/.env.local
+
+# Rebuilt inside the image (stage 1 runs `npm ci && npm run build`).
+web/node_modules
+web/dist
+
+# Python virtualenvs / caches (deps are reinstalled in the image).
+.venv
+**/.venv
+**/__pycache__
+**/*.pyc
+.pytest_cache
+**/.pytest_cache
+
+# VCS / IDE / misc
+.git
+.gitignore
+.idea
+.vscode
+*.log
+docs
+README.md
+

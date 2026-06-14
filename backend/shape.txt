@@ -1,0 +1,15 @@
+TOP_LEVEL_KEYS=@odata.context, response, activity, references
+REF_COUNT=3
+FIRST_REF={
+  "type": "AzureSearchDoc",
+  "id": "0",
+  "activitySource": 1,
+  "sourceData": null,
+  "docKey": "security-checklist-md--s-2-authentication-errors"
+}
+RESPONSE0={
+  "role": "assistant",
+  "content": [
+    {
+      "type": "text",
+      "text": "[{\"ref_id\":0,\"title\":\"S-2 Authentication errors\",\"terms\":\"security-checklist.md\",\"content\":\"Failed logins must return a generic `401` (\\\"invalid email or password\\\") that does not reveal whether the email exists. Avoid user-enumeration leaks.\"},{\"ref_id\":1,\"title\":\"S-1 Password storage\",\"terms\":\"security-checklist.md\",\"content\":\"Passwords must NEVER be stored or compared in plaintext. Hash with a slow, salted algorithm (bcrypt, scrypt, or Argon2id). Never log raw credentials.\"},{\"ref_id\":2,\"title\":\"S-5 Transport security\",\"terms\":\"security-checklist.md\",\"content\":\"All traffic is HTTPS/TLS. Reject mixed content. Set secure, HttpOnly cookies for any session identifi

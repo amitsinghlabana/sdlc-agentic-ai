@@ -1,0 +1,61 @@
+name: Reindex Foundry IQ standards
+
+# Adding/editing a standard is a DATA update (Azure AI Search index), not a code
+# deploy. This workflow re-indexes docs/standards/** into the knowledge index so
+# the hosted app reflects the change immediately — no app redeploy/restart needed.
+#
+# It runs the existing `refresh` step (clears old docs, re-uploads current ones),
+# which only touches the Search index — it does NOT rebuild the index schema or
+# re-bind the knowledge agent.
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - "docs/standards/**"          # only when standards actually change
+      - "scripts/setup_foundry_iq.py"
+  workflow_dispatch: {}               # allow manual "Run workflow"
+
+jobs:
+  reindex:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.13"
+
+      - name: Install dependencies
+        run: pip install -r backend/requirements.txt
+
+      - name: Refresh the knowledge index (zero Azure OpenAI tokens)
+        env:
+          KNOWLEDGE_PROVIDER: foundry
+          # --- Instance config via repo Variables (keeps resource names out of
+          #     source). Set in GitHub → Settings → Secrets and variables →
+          #     Actions → Variables. ---
+          FOUNDRY_SEARCH_ENDPOINT: ${{ vars.FOUNDRY_SEARCH_ENDPOINT }}
+          FOUNDRY_INDEX: ${{ vars.FOUNDRY_INDEX }}
+          FOUNDRY_KNOWLEDGE_AGENT: ${{ vars.FOUNDRY_KNOWLEDGE_AGENT }}
+          FOUNDRY_API_VERSION: ${{ vars.FOUNDRY_API_VERSION }}
+          # --- Secret: add in GitHub → Settings → Secrets and variables → Actions ---
+          FOUNDRY_API_KEY: ${{ secrets.FOUNDRY_API_KEY }}
+        run: python scripts/setup_foundry_iq.py refresh
+
+      # The test step issues one agentic `retrieve`, which calls gpt-4.1-mini to
+      # plan sub-queries → a tiny amount of Azure OpenAI tokens. To keep the
+      # automatic (push-triggered) reindex strictly zero-token, only verify on a
+      # manual run.
+      - name: Verify retrieval (manual runs only — uses a few tokens)
+        if: github.event_name == 'workflow_dispatch'
+        env:
+          KNOWLEDGE_PROVIDER: foundry
+          FOUNDRY_SEARCH_ENDPOINT: ${{ vars.FOUNDRY_SEARCH_ENDPOINT }}
+          FOUNDRY_INDEX: ${{ vars.FOUNDRY_INDEX }}
+          FOUNDRY_KNOWLEDGE_AGENT: ${{ vars.FOUNDRY_KNOWLEDGE_AGENT }}
+          FOUNDRY_API_VERSION: ${{ vars.FOUNDRY_API_VERSION }}
+          FOUNDRY_API_KEY: ${{ secrets.FOUNDRY_API_KEY }}
+        run: python scripts/setup_foundry_iq.py test
+
+

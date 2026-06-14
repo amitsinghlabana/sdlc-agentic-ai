@@ -1,0 +1,279 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>SDLC Agentic AI — From idea to shipped code, in minutes</title>
+    <link
+      rel="icon"
+      href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🧩</text></svg>"
+    />
+
+    <!-- Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&family=JetBrains+Mono:wght@400;500&display=swap"
+      rel="stylesheet"
+    />
+
+    <!-- Tailwind Play CDN (no build step) -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+      tailwind.config = {
+        theme: {
+          extend: {
+            fontFamily: {
+              sans: ["Inter", "Segoe UI", "system-ui", "sans-serif"],
+              mono: ["'JetBrains Mono'", "Consolas", "monospace"],
+            },
+            colors: {
+              ink: { 950: "#070b16", 900: "#0b1020", 850: "#0f1526", 800: "#131a2e", 700: "#1b2440" },
+              brand: { 400: "#7aa2ff", 500: "#5b8cff", 600: "#3f6fe0" },
+              accent: { 400: "#a78bfa", 500: "#8b5cf6", 600: "#7c3aed" },
+              accent2: { 400: "#22d3ee", 500: "#06b6d4" },
+            },
+            boxShadow: {
+              glow: "0 0 0 1px rgba(139,92,246,0.45), 0 0 60px -12px rgba(139,92,246,0.55)",
+              soft: "0 14px 44px rgba(0,0,0,0.5)",
+            },
+            keyframes: {
+              floaty: { "0%,100%": { transform: "translateY(0)" }, "50%": { transform: "translateY(-7px)" } },
+              fadeup: { "0%": { opacity: 0, transform: "translateY(16px)" }, "100%": { opacity: 1, transform: "translateY(0)" } },
+            },
+            animation: { floaty: "floaty 5s ease-in-out infinite", fadeup: "fadeup .6s ease both" },
+          },
+        },
+      };
+    </script>
+
+    <style>
+      html, body { height: 100%; }
+      body {
+        margin: 0;
+        font-family: "Inter", system-ui, sans-serif;
+        color: #e8edf7;
+        background-color: #070b16;
+        background-image:
+          radial-gradient(1100px 620px at 85% -8%, rgba(139, 92, 246, 0.20), transparent 60%),
+          radial-gradient(900px 560px at -5% 5%, rgba(6, 182, 212, 0.14), transparent 55%),
+          linear-gradient(rgba(255, 255, 255, 0.025) 1px, transparent 1px),
+          linear-gradient(90deg, rgba(255, 255, 255, 0.025) 1px, transparent 1px);
+        background-size: 100% 100%, 100% 100%, 38px 38px, 38px 38px;
+        -webkit-font-smoothing: antialiased;
+        overflow-x: hidden;
+      }
+      .gradient-text {
+        background: linear-gradient(110deg, #a78bfa, #e879f9 45%, #22d3ee);
+        -webkit-background-clip: text;
+        background-clip: text;
+        color: transparent;
+      }
+      .reveal { opacity: 0; }
+      .reveal.in { animation: fadeup 0.6s ease both; }
+      *::-webkit-scrollbar { width: 9px; height: 9px; }
+      *::-webkit-scrollbar-thumb { background: rgba(120, 140, 190, 0.28); border-radius: 999px; }
+      /* mouse spotlight */
+      #spot {
+        position: fixed; inset: 0; z-index: 0; pointer-events: none;
+        background: radial-gradient(600px circle at var(--x, 50%) var(--y, 0%), rgba(139,92,246,0.16), transparent 40%);
+        transition: background 0.08s;
+      }
+      .term-line { opacity: 0; transform: translateX(-8px); animation: fadeup 0.3s ease forwards; }
+    </style>
+  </head>
+
+  <body class="min-h-full">
+    <div id="spot"></div>
+
+    <!-- Nav -->
+    <header class="relative z-10 mx-auto flex max-w-[1200px] items-center justify-between px-6 py-5">
+      <div class="flex items-center gap-2.5">
+        <span class="grid h-9 w-9 place-items-center rounded-xl bg-gradient-to-br from-accent-500 to-accent-600 shadow-glow">
+          <span class="text-lg">🧩</span>
+        </span>
+        <span class="font-extrabold tracking-tight">SDLC Agentic AI</span>
+      </div>
+      <nav class="hidden items-center gap-7 text-sm text-slate-300 md:flex">
+        <a href="#how" class="transition hover:text-white">How it works</a>
+        <a href="#features" class="transition hover:text-white">Features</a>
+        <a href="https://github.com/amitsinghlabana" target="_blank" rel="noreferrer" class="transition hover:text-white">GitHub</a>
+      </nav>
+      <a href="/app" class="inline-flex items-center gap-1.5 rounded-xl border border-white/10 bg-white/[0.05] px-4 py-2 text-sm font-semibold text-slate-100 transition hover:bg-white/[0.1]">
+        Launch App →
+      </a>
+    </header>
+
+    <!-- Hero -->
+    <section class="relative z-10 mx-auto grid max-w-[1200px] items-center gap-10 px-6 pb-12 pt-8 lg:grid-cols-2 lg:pt-16">
+      <div class="reveal in">
+        <span class="inline-flex items-center gap-1.5 rounded-full border border-accent-500/30 bg-accent-500/10 px-3 py-1 text-xs font-semibold text-accent-400">
+          ✦ Autonomous multi-agent SDLC
+        </span>
+        <h1 class="mt-4 text-4xl font-black leading-[1.04] tracking-tight sm:text-5xl lg:text-6xl">
+          From idea to working code —
+          <span class="gradient-text">in minutes.</span>
+        </h1>
+        <p class="mt-5 max-w-xl text-lg leading-relaxed text-slate-400">
+          A virtual software team that turns a one-line request into requirements, design,
+          reviewed code, tests, and docs — then ships it as a GitHub Pull Request.
+        </p>
+        <div class="mt-7 flex flex-wrap items-center gap-3">
+          <a href="/app" class="inline-flex items-center gap-2 rounded-xl bg-gradient-to-b from-accent-500 to-accent-600 px-5 py-3 text-sm font-semibold text-white shadow-glow transition hover:-translate-y-0.5">
+            ▶ Launch the App
+          </a>
+          <a href="#how" class="inline-flex items-center gap-2 rounded-xl border border-white/10 bg-white/[0.05] px-5 py-3 text-sm font-semibold text-slate-200 transition hover:bg-white/[0.1]">
+            See how it works
+          </a>
+        </div>
+        <div class="mt-6 flex flex-wrap items-center gap-x-5 gap-y-2 text-xs text-slate-500">
+          <span>✓ 6 specialized agents</span>
+          <span>✓ Live streaming runs</span>
+          <span>✓ Grounded by Foundry IQ</span>
+        </div>
+      </div>
+
+      <!-- Live-run terminal -->
+      <div class="reveal in animate-floaty" style="animation-delay: 0.15s">
+        <div class="overflow-hidden rounded-2xl border border-white/10 bg-ink-950/80 shadow-glow backdrop-blur-xl">
+          <div class="flex items-center gap-2 border-b border-white/10 bg-white/[0.03] px-4 py-2.5">
+            <span class="h-3 w-3 rounded-full bg-rose-400/80"></span>
+            <span class="h-3 w-3 rounded-full bg-amber-400/80"></span>
+            <span class="h-3 w-3 rounded-full bg-emerald-400/80"></span>
+            <span class="ml-2 font-mono text-xs text-slate-500">sdlc-agent · live run</span>
+          </div>
+          <div id="terminal" class="h-[330px] space-y-2 overflow-hidden p-4 font-mono text-[13px] leading-relaxed"></div>
+        </div>
+      </div>
+    </section>
+
+    <!-- How it works -->
+    <section id="how" class="relative z-10 mx-auto max-w-[1200px] px-6 py-20">
+      <div class="mx-auto mb-12 max-w-2xl text-center">
+        <h2 class="text-3xl font-extrabold tracking-tight sm:text-4xl">How it works</h2>
+        <p class="mt-3 text-slate-400">Six specialized agents hand off like a real team — with a review loop.</p>
+      </div>
+      <div id="steps" class="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3"></div>
+    </section>
+
+    <!-- Features -->
+    <section id="features" class="relative z-10 mx-auto max-w-[1200px] px-6 py-20">
+      <div class="mx-auto mb-12 max-w-2xl text-center">
+        <h2 class="text-3xl font-extrabold tracking-tight sm:text-4xl">
+          Everything a software team does — <span class="gradient-text">automated</span>
+        </h2>
+        <p class="mt-3 text-slate-400">Not a prompt-to-code toy. A full, reviewable SDLC pipeline.</p>
+      </div>
+      <div id="features-grid" class="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3"></div>
+    </section>
+
+    <!-- CTA -->
+    <section class="relative z-10 mx-auto max-w-[1200px] px-6 pb-20">
+      <div class="overflow-hidden rounded-3xl border border-white/10 bg-gradient-to-br from-accent-500/15 via-fuchsia-500/10 to-accent2-500/15 p-10 text-center backdrop-blur-xl">
+        <h2 class="text-3xl font-extrabold tracking-tight">Ready to watch the team work?</h2>
+        <p class="mx-auto mt-3 max-w-lg text-slate-300">
+          Describe a feature and watch six agents design, build, review, and ship it — live.
+        </p>
+        <a href="/app" class="mt-6 inline-flex items-center gap-2 rounded-xl bg-white px-6 py-3 text-sm font-bold text-ink-950 transition hover:-translate-y-0.5">
+          Launch the App →
+        </a>
+      </div>
+    </section>
+
+    <!-- Footer -->
+    <footer class="relative z-10 border-t border-white/10 bg-ink-950/40">
+      <div class="mx-auto flex max-w-[1200px] flex-col items-center justify-between gap-4 px-6 py-8 sm:flex-row">
+        <div class="flex items-center gap-2.5 text-slate-300">
+          <span class="grid h-8 w-8 place-items-center rounded-lg bg-gradient-to-br from-accent-500 to-accent-600 text-sm">🧩</span>
+          <span class="text-sm font-semibold">SDLC Agentic AI</span>
+        </div>
+        <p class="text-xs text-slate-500">Built for the hackathon · Powered by Azure OpenAI + Foundry IQ</p>
+      </div>
+    </footer>
+
+    <script>
+      // --- Mouse spotlight ---
+      const spot = document.getElementById("spot");
+      addEventListener("mousemove", (e) => {
+        spot.style.setProperty("--x", e.clientX + "px");
+        spot.style.setProperty("--y", e.clientY + "px");
+      });
+
+      // --- Steps ---
+      const STEPS = [
+        ["🧭", "Requirements", "Turns your idea into testable stories & acceptance criteria."],
+        ["🏗", "Architect", "Picks a pragmatic stack and defines the API contract."],
+        ["💻", "Developer", "Writes the code and tests — editing real files when given a repo."],
+        ["🧪", "Tester", "Adds unit tests and exercises the acceptance criteria."],
+        ["🔎", "Reviewer", "Security & quality pass; loops back for revisions."],
+        ["📝", "Docs", "Writes the README and run instructions."],
+      ];
+      document.getElementById("steps").innerHTML = STEPS.map(([e, n, d], i) => `
+        <div class="reveal rounded-2xl border border-white/10 bg-white/[0.03] p-5 backdrop-blur-xl">
+          <div class="flex items-center gap-3">
+            <span class="grid h-11 w-11 shrink-0 place-items-center rounded-xl border border-white/10 bg-white/[0.04] text-xl">${e}</span>
+            <div>
+              <p class="text-[11px] font-semibold uppercase tracking-wider text-accent-400">Step ${i + 1}</p>
+              <h3 class="font-semibold text-slate-100">${n}</h3>
+            </div>
+          </div>
+          <p class="mt-3 text-sm leading-relaxed text-slate-400">${d}</p>
+        </div>`).join("");
+
+      // --- Features ---
+      const FEATURES = [
+        ["🔒", "Requirement Lock", "Agents agree on testable stories & criteria before any code is written."],
+        ["👥", "Multi-Agent Team", "Requirements → Architect → Developer → Tester → Reviewer → Docs, live."],
+        ["📚", "Grounded by Foundry IQ", "Retrieval-augmented standards keep output cited and consistent."],
+        ["🐙", "GitHub Integration", "Create a new repo or open a branch + PR — with AI-authored commits."],
+        ["📡", "Live Streaming Runs", "Watch every agent think in real time over Server-Sent Events."],
+        ["🎫", "JIRA Round-Trip", "Import an issue as a request, then push generated stories back."],
+      ];
+      document.getElementById("features-grid").innerHTML = FEATURES.map(([e, t, b]) => `
+        <div class="reveal group rounded-2xl border border-white/10 bg-white/[0.03] p-5 backdrop-blur-xl transition hover:border-accent-500/40 hover:bg-white/[0.05]">
+          <div class="mb-3 grid h-11 w-11 place-items-center rounded-xl border border-accent-500/30 bg-accent-500/10 text-xl transition group-hover:scale-105">${e}</div>
+          <h3 class="font-semibold text-slate-100">${t}</h3>
+          <p class="mt-1.5 text-sm leading-relaxed text-slate-400">${b}</p>
+        </div>`).join("");
+
+      // --- Scroll reveal ---
+      const io = new IntersectionObserver((entries) => {
+        entries.forEach((en) => { if (en.isIntersecting) { en.target.classList.add("in"); io.unobserve(en.target); } });
+      }, { threshold: 0.12 });
+      document.querySelectorAll(".reveal:not(.in)").forEach((el) => io.observe(el));
+
+      // --- Animated terminal ---
+      const SCRIPT = [
+        ["you", "Add email/password login to my web app", "text-violet-300"],
+        ["🧭 Requirements", "drafting user stories + acceptance criteria…", "text-slate-300"],
+        ["🧭 Requirements", "✓ 4 stories, 9 criteria — grounded via Foundry IQ", "text-emerald-300"],
+        ["🏗 Architect", "choosing stack: FastAPI + JWT + bcrypt…", "text-slate-300"],
+        ["🏗 Architect", "✓ design.md + API contract", "text-emerald-300"],
+        ["💻 Developer", "writing app/auth.py, routes, tests…", "text-slate-300"],
+        ["🔎 Reviewer", "security pass — flagging plaintext compare…", "text-slate-300"],
+        ["💻 Developer", "↻ revision 1 — bcrypt hashing applied", "text-amber-300"],
+        ["🔎 Reviewer", "✓ approved", "text-emerald-300"],
+        ["📝 Docs", "✓ README + run instructions", "text-emerald-300"],
+        ["✅ done", "6 artifacts ready · opened PR #1", "text-violet-300"],
+      ];
+      const term = document.getElementById("terminal");
+      let i = 0;
+      function tick() {
+        if (i >= SCRIPT.length) {
+          setTimeout(() => { term.innerHTML = ""; i = 0; tick(); }, 2800);
+          return;
+        }
+        const [who, text, cls] = SCRIPT[i];
+        const row = document.createElement("div");
+        row.className = "term-line flex gap-2";
+        row.innerHTML = `<span class="shrink-0 text-slate-500">${who}</span><span class="${cls}">${text}</span>`;
+        term.appendChild(row);
+        term.scrollTop = term.scrollHeight;
+        i++;
+        setTimeout(tick, i === 1 ? 600 : 760);
+      }
+      tick();
+    </script>
+  </body>
+</html>
+

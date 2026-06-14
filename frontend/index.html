@@ -1,0 +1,93 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>SDLC Agentic AI</title>
+    <link
+      rel="icon"
+      href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🧩</text></svg>"
+    />
+
+    <!-- Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500&display=swap"
+      rel="stylesheet"
+    />
+
+    <!-- Tailwind (Play CDN, JIT — compiles classes in the browser, no build step) -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+      tailwind.config = {
+        theme: {
+          extend: {
+            fontFamily: {
+              sans: ["Inter", "Segoe UI", "system-ui", "sans-serif"],
+              mono: ["'JetBrains Mono'", "'Cascadia Code'", "Consolas", "monospace"],
+            },
+            colors: {
+              ink: {
+                950: "#070b16",
+                900: "#0b1020",
+                850: "#0f1526",
+                800: "#131a2e",
+                700: "#1b2440",
+                600: "#273252",
+              },
+              brand: { 400: "#7aa2ff", 500: "#5b8cff", 600: "#3f6fe0" },
+            },
+            boxShadow: {
+              glow: "0 0 0 1px rgba(91,140,255,0.55), 0 0 30px rgba(91,140,255,0.28)",
+              soft: "0 14px 44px rgba(0,0,0,0.5)",
+            },
+            keyframes: {
+              "pulse-ring": {
+                "0%": { boxShadow: "0 0 0 0 rgba(91,140,255,0.55)" },
+                "70%": { boxShadow: "0 0 0 10px rgba(91,140,255,0)" },
+                "100%": { boxShadow: "0 0 0 0 rgba(91,140,255,0)" },
+              },
+              floaty: {
+                "0%,100%": { transform: "translateY(0)" },
+                "50%": { transform: "translateY(-4px)" },
+              },
+            },
+            animation: {
+              "pulse-ring": "pulse-ring 1.8s infinite",
+              floaty: "floaty 4s ease-in-out infinite",
+            },
+          },
+        },
+      };
+    </script>
+
+    <!-- Build-free React via ESM CDN (no npm install / no bundler needed) -->
+    <script type="importmap">
+      {
+        "imports": {
+          "react": "https://esm.sh/react@18.3.1",
+          "react/jsx-runtime": "https://esm.sh/react@18.3.1/jsx-runtime",
+          "react-dom/client": "https://esm.sh/react-dom@18.3.1/client?external=react",
+          "htm": "https://esm.sh/htm@3.1.1"
+        }
+      }
+    </script>
+
+    <link rel="stylesheet" href="/styles.css" />
+  </head>
+  <body class="min-h-full font-sans text-slate-100">
+    <div id="root">
+      <div class="grid min-h-screen place-items-center">
+        <div class="flex items-center gap-3 text-slate-400">
+          <span
+            class="h-5 w-5 animate-spin rounded-full border-2 border-brand-500 border-t-transparent"
+          ></span>
+          Loading interface…
+        </div>
+      </div>
+    </div>
+    <script type="module" src="/main.js"></script>
+  </body>
+</html>
+
