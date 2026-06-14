@@ -1,0 +1,63 @@
+# Render Blueprint — one-click hosting for SDLC Agentic AI.
+#
+# How to use:
+#   Render → New → Blueprint → pick the `sdlc-agentic-ai` repo → Apply.
+# Render builds the Dockerfile IN ITS CLOUD (no local Docker needed) and serves
+# the FastAPI API + the built React UI from a single HTTPS origin.
+#
+# Secrets are NEVER stored in this file. Keys marked `sync: false` show up as
+# blank, fill-in-the-dashboard env vars — so tokens stay out of git. Leaving them
+# blank is fine: every provider safely falls back to its free mock.
+
+services:
+  - type: web
+    name: sdlc-agentic-ai
+    runtime: docker
+    dockerfilePath: ./Dockerfile
+    dockerContext: .
+    plan: free                 # change to "starter" for always-on (no cold starts)
+    region: oregon             # pick the region nearest you (oregon | frankfurt | singapore | ohio | virginia)
+    healthCheckPath: /api/health
+    autoDeploy: true           # redeploy automatically on every push to main
+    envVars:
+      # ── Provider selection — default to free, offline mocks ($0, no secrets) ──
+      - key: LLM_PROVIDER
+        value: mock            # set to "azure" (or "openai") to go live
+      - key: JIRA_PROVIDER
+        value: mock            # set to "cloud" to target a real JIRA board
+      - key: GITHUB_PROVIDER
+        value: mock            # set to "cloud" to publish to real repos
+      - key: KNOWLEDGE_PROVIDER
+        value: mock            # set to "foundry" for live knowledge grounding
+
+      # ── Live credentials — set these in the Render dashboard when going live.
+      #    `sync: false` keeps them as secret env vars, never committed to git. ──
+      - key: AZURE_OPENAI_ENDPOINT
+        sync: false
+      - key: AZURE_OPENAI_API_KEY
+        sync: false
+      - key: AZURE_OPENAI_DEPLOYMENT
+        sync: false
+      - key: OPENAI_API_KEY
+        sync: false
+      - key: JIRA_BASE_URL
+        sync: false
+      - key: JIRA_EMAIL
+        sync: false
+      - key: JIRA_API_TOKEN
+        sync: false
+      - key: JIRA_PROJECT_KEY
+        sync: false
+      - key: GITHUB_OWNER
+        sync: false
+      - key: GITHUB_TOKEN
+        sync: false
+      - key: FOUNDRY_SEARCH_ENDPOINT
+        sync: false
+      - key: FOUNDRY_API_KEY
+        sync: false
+      - key: FOUNDRY_INDEX
+        sync: false
+      - key: FOUNDRY_KNOWLEDGE_AGENT
+        sync: false
+
