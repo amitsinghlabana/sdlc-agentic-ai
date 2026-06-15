@@ -63,18 +63,27 @@ class OpenAIProvider(LLMProvider):
         }
         if json_mode:
             kwargs["response_format"] = {"type": "json_object"}
-        logger.info("OpenAI call → tag=%s model=%s max_tokens=%s",
+        logger.info("OpenAI call -> tag=%s model=%s max_tokens=%s (streaming)",
                     tag or "?", self._model, kwargs["max_tokens"])
         t0 = time.perf_counter()
         try:
-            resp = await self._client.chat.completions.create(**kwargs)
+            # Stream so the read timeout is a per-chunk inactivity window, not a
+            # hard cap on the whole response (see AzureOpenAIProvider for details).
+            stream = await self._client.chat.completions.create(**kwargs, stream=True)
+            parts: list[str] = []
+            async for chunk in stream:
+                if not chunk.choices:
+                    continue
+                delta = chunk.choices[0].delta
+                if delta and delta.content:
+                    parts.append(delta.content)
+            content = "".join(parts)
         except Exception as exc:
             dt = time.perf_counter() - t0
-            logger.error("OpenAI call ✗ tag=%s after %.1fs: %s: %s",
+            logger.error("OpenAI call FAILED tag=%s after %.1fs: %s: %s",
                          tag or "?", dt, type(exc).__name__, exc)
             raise
         dt = time.perf_counter() - t0
-        content = resp.choices[0].message.content or ""
-        logger.info("OpenAI call ✓ tag=%s in %.1fs (%d chars)", tag or "?", dt, len(content))
+        logger.info("OpenAI call OK tag=%s in %.1fs (%d chars)", tag or "?", dt, len(content))
         return content
 
