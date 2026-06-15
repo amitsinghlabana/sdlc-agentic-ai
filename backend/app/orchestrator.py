@@ -13,8 +13,8 @@ Event types:
   agent_start  {agent, name, emoji, role, iteration}
   delta        {agent, text}            # streamed text for the typing effect
   artifact     {agent, artifact}        # one produced file
-  agent_done   {agent, summary, verdict, comments}
-  loop         {iteration, comments}    # reviewer requested changes
+  agent_done  {agent, summary, verdict, comments}
+  loop         {iteration, comments, final}  # reviewer requested changes; final=cap reached
   run_complete {artifacts: [...summary], duration_ms}
   error        {agent?, message}
 """
@@ -122,6 +122,36 @@ async def _run_agent(agent, wp: WorkPackage, llm: LLMProvider, iteration: int = 
         yield ev
 
 
+async def _review_loop(team, wp: WorkPackage, llm: LLMProvider) -> AsyncIterator[dict]:
+    """Reviewer→Developer feedback loop, capped by ``settings.max_review_loops``.
+
+    The reviewer inspects the current code; if it requests changes, the Developer
+    (and Tester) address them and we re-review — until the reviewer approves or
+    the cap is reached. When the cap is hit while changes are STILL requested, the
+    Developer applies one FINAL revision (so feedback is never silently dropped)
+    and the loop ends without another review pass — instead of stranding the run
+    on an unresolved "request_changes". That final loop-back is flagged ``final``.
+    """
+    loop = 0
+    while True:
+        async for ev in _run_agent(team["reviewer"], wp, llm, iteration=loop):
+            yield ev
+        last = wp.history[-1]
+        if last.verdict != "request_changes":
+            return  # approved (or no blocking verdict) → review complete
+
+        capped = loop >= settings.max_review_loops
+        loop += 1
+        wp.review_feedback = last.comments
+        yield _event("loop", iteration=loop, comments=last.comments, final=capped)
+        async for ev in _run_agent(team["developer"], wp, llm, iteration=loop):
+            yield ev
+        async for ev in _run_agent(team["tester"], wp, llm, iteration=loop):
+            yield ev
+        if capped:
+            return  # final revision applied; stop without another review pass
+
+
 async def run_pipeline(
     request: str,
     llm: LLMProvider,
@@ -186,20 +216,12 @@ async def run_pipeline(
     async for ev in _run_agent(team["tester"], wp, llm):
         yield ev
 
-    loop = 0
-    while True:
-        async for ev in _run_agent(team["reviewer"], wp, llm, iteration=loop):
-            yield ev
-        last = wp.history[-1]
-        if last.verdict != "request_changes" or loop >= settings.max_review_loops:
-            break
-        loop += 1
-        wp.review_feedback = last.comments
-        yield _event("loop", iteration=loop, comments=last.comments)
-        async for ev in _run_agent(team["developer"], wp, llm, iteration=loop):
-            yield ev
-        async for ev in _run_agent(team["tester"], wp, llm, iteration=loop):
-            yield ev
+    # 5) Reviewer with a capped Reviewer→Developer feedback loop. See
+    #    ``_review_loop``: the Developer always addresses the reviewer's comments
+    #    (including a final revision when the cap is reached), so the run never
+    #    strands on an unresolved "request_changes".
+    async for ev in _review_loop(team, wp, llm):
+        yield ev
 
     # 6) Documentation
     async for ev in _run_agent(team["docs"], wp, llm):

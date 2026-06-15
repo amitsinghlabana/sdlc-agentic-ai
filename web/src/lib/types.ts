@@ -41,7 +41,7 @@ export type StreamEvent =
       verdict: string | null;
       comments: string[];
     }
-  | { type: "loop"; iteration: number; comments: string[] }
+  | { type: "loop"; iteration: number; comments: string[]; final?: boolean }
   | {
       type: "run_complete";
       duration_ms: number;
@@ -79,12 +79,6 @@ export interface AppConfig {
   max_review_loops: number;
 }
 
-export interface LoopEvent {
-  iteration: number;
-  comments: string[];
-  /** index in the agent order after which to render the banner */
-  afterAgentId: string;
-}
 
 // --- Edit an existing repo (P3): context loaded for the agents to edit ------ #
 export interface RepoContextFile {

@@ -39,8 +39,6 @@ services:
       # pinned here or live calls misbehave (wrong API version / branch / type).
       - key: AZURE_OPENAI_API_VERSION
         value: "2024-08-01-preview"
-      - key: AZURE_OPENAI_DEPLOYMENT
-        value: "gpt-4.1-mini"          # code default is gpt-4o-mini
       - key: FOUNDRY_API_VERSION
         value: "2025-05-01-preview"    # code default is 2025-08-01-preview
       - key: KNOWLEDGE_TOP_K
@@ -57,6 +55,13 @@ services:
       # ── Identifiable endpoints / IDs — set in the dashboard (kept OUT of git) ─
       #    `sync: false` = blank placeholder you fill in Render, never committed.
       - key: AZURE_OPENAI_ENDPOINT
+        sync: false
+      # Model picker — dashboard-controlled so you can swap models WITHOUT editing
+      # this file or redeploying from git. Set it to your Azure *deployment* name
+      # (e.g. gpt-4o-mini, gpt-4.1-nano, gpt-4o). If left blank the app falls back
+      # to its built-in default (gpt-4o-mini). Change it in the Render dashboard →
+      # Environment, then "Save, rebuild, and deploy" to apply.
+      - key: AZURE_OPENAI_DEPLOYMENT
         sync: false
       - key: JIRA_BASE_URL
         sync: false

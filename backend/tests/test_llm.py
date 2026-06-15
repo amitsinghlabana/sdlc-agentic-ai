@@ -46,7 +46,11 @@ def _azure_settings(**overrides):
         azure_openai_api_version="2024-08-01-preview",
         azure_openai_endpoint="https://example.openai.azure.com/",
         azure_openai_deployment="gpt-4o-mini",
+        azure_responses_api_version="2025-04-01-preview",
+        azure_reasoning_effort="low",
         request_timeout=30.0,
+        temperature=0.4,
+        max_tokens=2000,
         llm_connect_timeout=15.0,
         llm_max_retries=1,
         llm_http_keepalive=False,
@@ -63,6 +67,51 @@ def test_azure_provider_constructs_with_custom_http_client():
     provider = AzureOpenAIProvider(_azure_settings())
     assert provider.name == "azure"
     assert "gpt-4o-mini" in provider.label
+
+
+def test_azure_provider_adapts_to_model_param_quirks():
+    """Codex/reasoning models reject some params — the provider should adapt so
+    a dashboard model-swap works without code changes."""
+    from app.llm.azure_openai import AzureOpenAIProvider
+
+    provider = AzureOpenAIProvider(_azure_settings())
+
+    # Default request shape: max_tokens + temperature + streaming.
+    kw = provider._build_kwargs("sys", "usr", True, 1000)
+    assert kw["max_tokens"] == 1000 and "temperature" in kw
+
+    # 1) "use max_completion_tokens instead" → switch token param.
+    assert provider._adapt(Exception(
+        "Error code: 400 - Unsupported parameter: 'max_tokens' is not supported "
+        "with this model. Use 'max_completion_tokens' instead."))
+    kw = provider._build_kwargs("sys", "usr", True, 1000)
+    assert kw.get("max_completion_tokens") == 1000 and "max_tokens" not in kw
+
+    # 2) temperature not supported → drop it.
+    assert provider._adapt(Exception(
+        "Error code: 400 - Unsupported value: 'temperature' does not support 0.4 "
+        "with this model. Only the default (1) value is supported."))
+    assert "temperature" not in provider._build_kwargs("sys", "usr", True, 1000)
+
+    # 3) streaming not supported → flip to a single call.
+    assert provider._adapt(Exception(
+        "Error code: 400 - This model does not support stream mode."))
+    assert provider._no_stream is True
+
+    # Unrelated errors are NOT swallowed (no false adaptation).
+    assert provider._adapt(Exception("Error code: 500 - internal server error")) is False
+
+
+def test_azure_provider_switches_to_responses_api():
+    """codex / gpt-5 deployments aren't served by Chat Completions — the provider
+    must detect that and route to the Responses API (no code change needed)."""
+    from app.llm.azure_openai import AzureOpenAIProvider
+
+    provider = AzureOpenAIProvider(_azure_settings())
+    assert provider._use_responses_api is False
+    assert provider._adapt(Exception(
+        "Error code: 400 - {'error': {'message': 'The requested operation is unsupported.'}}"))
+    assert provider._use_responses_api is True
 
 
 def test_openai_provider_constructs_with_custom_http_client():

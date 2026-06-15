@@ -43,6 +43,18 @@ class Settings:
         self.azure_openai_api_version: str = os.getenv(
             "AZURE_OPENAI_API_VERSION", "2024-08-01-preview"
         ).strip()
+        # Some models (codex / gpt-5 reasoning family) are ONLY served by the
+        # Responses API, which needs a newer api-version than Chat Completions.
+        # Used automatically when a deployment rejects Chat Completions; lets you
+        # swap to such a model via env/dashboard without any code change.
+        self.azure_responses_api_version: str = os.getenv(
+            "AZURE_RESPONSES_API_VERSION", "2025-04-01-preview"
+        ).strip()
+        # Reasoning effort for Responses-API models (codex / gpt-5 family). "low"
+        # suits this app's structured generation (fast + reliable JSON); "medium"/
+        # "high" reason longer (slower). Ignored by non-reasoning models. Note:
+        # codex-mini rejects "minimal", so "low" is the safe floor.
+        self.azure_reasoning_effort: str = os.getenv("AZURE_REASONING_EFFORT", "low").strip().lower()
         # The *deployment* name you created in Azure AI Foundry (not the model name).
         self.azure_openai_deployment: str = os.getenv(
             "AZURE_OPENAI_DEPLOYMENT", "gpt-4o-mini"

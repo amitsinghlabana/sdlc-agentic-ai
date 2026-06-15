@@ -15,7 +15,7 @@ interface RunState {
   agents: Record<string, AgentState>;
   artifactOrder: string[];
   artifacts: Record<string, Artifact>;
-  loops: { iteration: number; comments: string[] }[];
+  loops: { iteration: number; comments: string[]; final?: boolean }[];
   repoContext: RepoContext | null;
   durationMs: number | null;
   providerLabel: string | null;
@@ -158,7 +158,7 @@ export function useAgentStream() {
         case "loop":
           return {
             ...s,
-            loops: [...s.loops, { iteration: ev.iteration, comments: ev.comments }],
+            loops: [...s.loops, { iteration: ev.iteration, comments: ev.comments, final: ev.final }],
           };
 
         case "run_complete":

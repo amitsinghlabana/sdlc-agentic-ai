@@ -6,7 +6,7 @@ import AgentChatMessage from "./AgentChatMessage";
 interface Props {
   agentOrder: string[];
   agents: Record<string, AgentState>;
-  loops: { iteration: number; comments: string[] }[];
+  loops: { iteration: number; comments: string[]; final?: boolean }[];
 }
 
 /**
@@ -50,8 +50,9 @@ export default function ChatPipeline({ agentOrder, agents, loops }: Readonly<Pro
                     <RotateCcw className="mt-0.5 h-4 w-4 shrink-0" />
                     <div className="text-xs">
                       <p className="font-semibold">
-                        Reviewer requested changes — looping back to the Developer (revision{" "}
-                        {loop.iteration}).
+                        {loop.final
+                          ? `Max review iterations reached — Developer applied a final revision (${loop.iteration}) to address the remaining comments.`
+                          : `Reviewer requested changes — looping back to the Developer (revision ${loop.iteration}).`}
                       </p>
                       {loop.comments?.length > 0 && (
                         <ul className="mt-1 list-disc space-y-0.5 pl-4 text-amber-200/80">
