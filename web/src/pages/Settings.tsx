@@ -1,43 +1,21 @@
 import { useCallback, useState } from "react";
-import { motion } from "framer-motion";
-import {
-  SlidersHorizontal,
-  Server,
-  KeyRound,
-  Plug,
-  Users,
-  CreditCard,
-} from "lucide-react";
+import { Server } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
 import TopBar from "../components/shell/TopBar";
 import ProviderSettingForm from "../components/settings/ProviderSettingForm";
 import { useAdmin } from "../hooks/useAdmin";
 import { toast } from "../store/toast";
 
-type TabKey = "general" | "providers" | "keys" | "integrations" | "team" | "billing";
+type TabKey = "providers";
 
 const TABS: { key: TabKey; label: string; icon: LucideIcon }[] = [
-  { key: "general", label: "General", icon: SlidersHorizontal },
-  { key: "providers", label: "Providers", icon: Server },
-  { key: "keys", label: "API Keys", icon: KeyRound },
-  { key: "integrations", label: "Integrations", icon: Plug },
-  { key: "team", label: "Team", icon: Users },
-  { key: "billing", label: "Billing", icon: CreditCard },
+  { key: "providers", label: "Integration", icon: Server },
 ];
 
-function Placeholder({ title, body }: Readonly<{ title: string; body: string }>) {
-  return (
-    <div className="grid place-items-center rounded-card border border-dashed border-white/10 bg-white/[0.02] p-12 text-center">
-      <p className="text-sm font-semibold text-slate-300">{title}</p>
-      <p className="mt-1 max-w-sm text-xs text-slate-500">{body}</p>
-    </div>
-  );
-}
-
 /**
- * Settings page (UI_VISUAL_SPEC Screen 05). Inner sidebar of sections with the
- * Providers tab wired to the live useAdmin hook; the remaining tabs are honest
- * placeholders until their backend endpoints exist.
+ * Settings page. A single Integration section wired to the live useAdmin hook,
+ * letting you switch each provider (LLM, GitHub, JIRA, Foundry) between mock and
+ * live without a restart.
  */
 export default function Settings() {
   const [tab, setTab] = useState<TabKey>("providers");
@@ -49,7 +27,6 @@ export default function Settings() {
       <TopBar
         maxWidth="max-w-[1100px]"
         showBrand={false}
-        left={<span className="text-sm font-semibold text-slate-200">Settings</span>}
       />
 
       <main className="mx-auto max-w-[1100px] px-6 py-8">
@@ -79,16 +56,11 @@ export default function Settings() {
           </nav>
 
           {/* Panel */}
-          <motion.section
-            key={tab}
-            initial={{ opacity: 0, y: 8 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.2 }}
-          >
+          <section>
             {tab === "providers" && (
               <>
                 <div className="mb-4">
-                  <h2 className="text-lg font-bold text-slate-100">Providers</h2>
+                  <h2 className="text-lg font-bold text-slate-100">Integration</h2>
                   <p className="text-sm text-slate-400">
                     Switch any integration between mock and live without a restart. Choices persist;
                     live falls back to mock if not configured.
@@ -97,37 +69,7 @@ export default function Settings() {
                 <ProviderSettingForm admin={admin} />
               </>
             )}
-            {tab === "general" && (
-              <Placeholder
-                title="General settings"
-                body="Workspace name, default branch and run preferences will live here."
-              />
-            )}
-            {tab === "keys" && (
-              <Placeholder
-                title="API keys"
-                body="Manage personal access tokens for the SDLC Agentic AI API."
-              />
-            )}
-            {tab === "integrations" && (
-              <Placeholder
-                title="Integrations"
-                body="Connect GitHub, JIRA and Foundry IQ. Configure them under Providers for now."
-              />
-            )}
-            {tab === "team" && (
-              <Placeholder
-                title="Team members"
-                body="Invite teammates and manage roles once authentication is enabled."
-              />
-            )}
-            {tab === "billing" && (
-              <Placeholder
-                title="Billing"
-                body="Usage-based billing and plan management — coming soon."
-              />
-            )}
-          </motion.section>
+          </section>
         </div>
       </main>
     </div>

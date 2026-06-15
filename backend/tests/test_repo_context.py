@@ -10,7 +10,7 @@ import asyncio
 from app.config import settings
 from app.integrations.github.mock import MockGitHubClient
 from app.llm.mock import MockProvider
-from app.models import WorkPackage, infer_artifact
+from app.models import WorkPackage, infer_artifact, refine_artifact
 from app.orchestrator import run_pipeline
 
 
@@ -26,12 +26,43 @@ def test_infer_artifact_detects_tests():
     assert infer_artifact("tests/test_x.py").type == "test"
     assert infer_artifact("src/foo.test.ts").type == "test"
     assert infer_artifact("pkg/__tests__/a.js").type == "test"
+    assert infer_artifact("pkg/handler_test.go").type == "test"
 
 
 def test_infer_artifact_config_and_docs():
     assert infer_artifact("pkg.json", "{}").type == "config"
     assert infer_artifact("README.md", "# hi").type == "doc"
     assert infer_artifact("config.yaml", "a: 1").language == "yaml"
+
+
+def test_infer_artifact_supports_more_languages():
+    assert infer_artifact("cmd/main.go").language == "go"
+    assert infer_artifact("src/lib.rs").language == "rust"
+    assert infer_artifact("Main.java").language == "java"
+    assert infer_artifact("app/Program.cs").language == "csharp"
+    assert infer_artifact("src/App.tsx").language == "typescript"
+    assert infer_artifact("Dockerfile").type == "config"
+    assert infer_artifact("go.mod").type == "config"
+
+
+# --------------------------------------------------------------------------- #
+# refine_artifact — normalize generated artifacts from their path
+# --------------------------------------------------------------------------- #
+def test_refine_artifact_fixes_language_from_extension():
+    from app.models import Artifact
+
+    # Model mislabeled a Go file as python → corrected from the .go extension.
+    a = refine_artifact(Artifact(name="cmd/main.go", type="code", language="python", content=""))
+    assert a.language == "go"
+    # Missing language is filled in from the extension.
+    b = refine_artifact(Artifact(name="src/index.ts", type="code", language="", content=""))
+    assert b.language == "typescript"
+    # A file under tests/ is tagged as a test even if the model said "code".
+    c = refine_artifact(Artifact(name="tests/test_login.py", type="code", language="python"))
+    assert c.type == "test"
+    # Unknown extension keeps the model-provided language.
+    d = refine_artifact(Artifact(name="notes.xyz", type="code", language="custom"))
+    assert d.language == "custom"
 
 
 # --------------------------------------------------------------------------- #

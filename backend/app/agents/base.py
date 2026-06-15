@@ -7,7 +7,7 @@ import re
 
 from ..config import settings
 from ..llm.base import LLMProvider
-from ..models import AgentResult, Artifact, WorkPackage
+from ..models import AgentResult, Artifact, WorkPackage, refine_artifact
 
 logger = logging.getLogger("sdlc.agents")
 
@@ -189,7 +189,7 @@ class Agent:
         artifacts = []
         for a in data.get("artifacts", []) or []:
             try:
-                artifacts.append(Artifact(**a))
+                artifacts.append(refine_artifact(Artifact(**a)))
             except Exception:
                 # Skip malformed artifact entries rather than failing the run.
                 continue

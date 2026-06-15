@@ -1,10 +1,9 @@
 import type { LucideIcon } from "lucide-react";
 import {
+  Home,
   LayoutDashboard,
   Workflow,
   Zap,
-  FileCode2,
-  Plug,
   Settings,
   LifeBuoy,
   Boxes,
@@ -24,45 +23,26 @@ interface NavItem {
 }
 
 const NAV: NavItem[] = [
+  { to: "/", label: "Home", icon: Home },
   { to: "/dashboard", label: "Overview", icon: LayoutDashboard },
   { to: "/app", label: "Workspace", icon: Workflow },
   { to: "/runs", label: "Runs", icon: Zap },
   { to: "/settings/providers", label: "Settings", icon: Settings, match: ["/settings"] },
 ];
 
-const SECONDARY: NavItem[] = [
-  { to: "/app", label: "Artifacts", icon: FileCode2 },
-  { to: "/settings/providers", label: "Integrations", icon: Plug, match: ["/settings"] },
-];
 
 function isActive(path: string, item: NavItem): boolean {
   if (path === item.to) return true;
   return (item.match ?? []).some((m) => path.startsWith(m));
 }
 
-/** In-page scroll target (Workspace only) — scrolls instead of navigating. */
-export interface SidebarJumpItem {
-  id: string;
-  label: string;
-  icon: LucideIcon;
-}
-
-interface SidebarProps {
-  /** When provided, renders an "On this page" group (e.g. the Workspace's
-   *  Pipeline / Files sections) whose items scroll rather than route. */
-  jumpItems?: SidebarJumpItem[];
-  activeJump?: string;
-  onJump?: (id: string) => void;
-}
-
 /**
  * Persistent left navigation shared by every in-app screen (Dashboard, Runs,
  * Settings AND the Workspace) so the side nav looks and behaves identically
- * everywhere. Mirrors UI_VISUAL_SPEC Screen 02 — brand at the top, primary nav
- * with an accent-highlighted active item, and a help link pinned to the bottom.
- * The Workspace additionally passes in-page jump items (Pipeline / Files).
+ * everywhere. Brand at the top, primary nav with an accent-highlighted active
+ * item, and a help link pinned to the bottom.
  */
-export default function Sidebar({ jumpItems, activeJump, onJump }: Readonly<SidebarProps>) {
+export default function Sidebar() {
   const { path } = useRouter();
   const collapsed = useSidebarCollapsed();
 
@@ -101,45 +81,6 @@ export default function Sidebar({ jumpItems, activeJump, onJump }: Readonly<Side
             to={item.to}
             title={collapsed ? item.label : undefined}
             className={rowCls(isActive(path, item))}
-          >
-            <item.icon className="h-4 w-4 shrink-0" />
-            {!collapsed && item.label}
-          </Link>
-        ))}
-
-        {jumpItems && jumpItems.length > 0 && (
-          <>
-            {collapsed ? (
-              <div className="mx-2 my-2 border-t border-white/10" />
-            ) : (
-              <p className="px-3 pb-1 pt-5 label-caps">On this page</p>
-            )}
-            {jumpItems.map((item) => (
-              <button
-                key={item.id}
-                type="button"
-                onClick={() => onJump?.(item.id)}
-                title={collapsed ? item.label : undefined}
-                className={[rowCls(activeJump === item.id), "w-full text-left"].join(" ")}
-              >
-                <item.icon className="h-4 w-4 shrink-0" />
-                {!collapsed && item.label}
-              </button>
-            ))}
-          </>
-        )}
-
-        {collapsed ? (
-          <div className="mx-2 my-2 border-t border-white/10" />
-        ) : (
-          <p className="px-3 pb-1 pt-5 label-caps">Resources</p>
-        )}
-        {SECONDARY.map((item) => (
-          <Link
-            key={item.label}
-            to={item.to}
-            title={collapsed ? item.label : undefined}
-            className={rowCls(false)}
           >
             <item.icon className="h-4 w-4 shrink-0" />
             {!collapsed && item.label}

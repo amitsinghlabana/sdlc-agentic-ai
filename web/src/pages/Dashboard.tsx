@@ -1,5 +1,4 @@
 import { useMemo } from "react";
-import { motion } from "framer-motion";
 import { Activity, ArrowRight, CheckCircle2, Clock, FileCode2, Plus, Search } from "lucide-react";
 import { Link } from "../lib/router";
 import { useRuns } from "../store/useRunStore";
@@ -36,7 +35,6 @@ export default function Dashboard() {
       {/* Top nav */}
       <TopBar
         showBrand={false}
-        left={<span className="text-sm font-semibold text-slate-200">Overview</span>}
         right={
           <>
             <button
@@ -60,30 +58,24 @@ export default function Dashboard() {
 
       <main className="mx-auto max-w-[1200px] px-6 py-8">
         {/* Greeting */}
-        <motion.div
-          initial={{ opacity: 0, y: 14 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.4 }}
-          className="mb-8"
-        >
+        <div className="mb-8">
           <h1 className="text-3xl font-extrabold tracking-tight">
             Welcome back 👋
           </h1>
           <p className="mt-1 text-slate-400">
             Spin up a virtual software team, or revisit a recent run.
           </p>
-        </motion.div>
+        </div>
 
         {/* Stat cards */}
         <section className="grid grid-cols-2 gap-4 lg:grid-cols-4">
-          <StatCard icon={Activity} label="Total Runs" value={String(stats.total)} hint="all time" delay={0} />
+          <StatCard icon={Activity} label="Total Runs" value={String(stats.total)} hint="all time" />
           <StatCard
             icon={CheckCircle2}
             label="Pass Rate"
             value={`${stats.passRate}%`}
             hint="runs completed"
             accent="text-emerald-400"
-            delay={0.05}
           />
           <StatCard
             icon={FileCode2}
@@ -91,7 +83,6 @@ export default function Dashboard() {
             value={String(stats.artifacts)}
             hint="files generated"
             accent="text-accent2-400"
-            delay={0.1}
           />
           <StatCard
             icon={Clock}
@@ -99,7 +90,6 @@ export default function Dashboard() {
             value={fmtAvg(stats.avg)}
             hint="per run"
             accent="text-amber-400"
-            delay={0.15}
           />
         </section>
 
@@ -125,8 +115,8 @@ export default function Dashboard() {
             />
           ) : (
             <div className="space-y-3">
-              {runs.slice(0, 5).map((run, i) => (
-                <RunCard key={run.id} run={run} delay={Math.min(i * 0.04, 0.3)} />
+              {runs.slice(0, 5).map((run) => (
+                <RunCard key={run.id} run={run} />
               ))}
             </div>
           )}

@@ -1,8 +1,18 @@
-import { useEffect, useState } from "react";
-import { Check, Copy, Download, FolderTree, SquareCheck } from "lucide-react";
+import { useEffect, useMemo, useState } from "react";
+import {
+  Check,
+  ChevronsDownUp,
+  ChevronsUpDown,
+  Copy,
+  Download,
+  FileArchive,
+  FolderTree,
+  SquareCheck,
+} from "lucide-react";
 import type { Artifact } from "../../lib/types";
 import CodeBlock from "../CodeBlock";
-import ArtifactTree from "./ArtifactTree";
+import ArtifactTree, { collectDirPaths } from "./ArtifactTree";
+import { downloadZip } from "../../lib/zip";
 
 interface Props {
   artifactOrder: string[];
@@ -10,6 +20,49 @@ interface Props {
   selected: Set<string>;
   onToggleSelect: (name: string) => void;
   onSelectAll: () => void;
+}
+
+const TOOLBAR_BTN =
+  "inline-flex items-center gap-1.5 rounded-lg border border-white/10 bg-white/[0.03] px-2 py-1 text-[11px] font-semibold text-slate-300 transition hover:bg-white/[0.07]";
+
+/** Header actions: collapse/expand all, download zip, select/clear all. */
+function ExplorerToolbar({
+  allCollapsed,
+  selectedAll,
+  onToggleAll,
+  onDownloadZip,
+  onSelectAll,
+}: Readonly<{
+  allCollapsed: boolean;
+  selectedAll: boolean;
+  onToggleAll: () => void;
+  onDownloadZip: () => void;
+  onSelectAll: () => void;
+}>) {
+  return (
+    <div className="flex items-center gap-1.5">
+      <button
+        onClick={onToggleAll}
+        title={allCollapsed ? "Expand all folders" : "Collapse all folders"}
+        className={TOOLBAR_BTN}
+      >
+        {allCollapsed ? (
+          <ChevronsUpDown className="h-3.5 w-3.5" />
+        ) : (
+          <ChevronsDownUp className="h-3.5 w-3.5" />
+        )}
+        {allCollapsed ? "Expand" : "Collapse"}
+      </button>
+      <button onClick={onDownloadZip} title="Download all artifacts as a .zip" className={TOOLBAR_BTN}>
+        <FileArchive className="h-3.5 w-3.5" />
+        Zip
+      </button>
+      <button onClick={onSelectAll} title="Select / clear all for publish" className={TOOLBAR_BTN}>
+        <SquareCheck className="h-3.5 w-3.5" />
+        {selectedAll ? "Clear" : "All"}
+      </button>
+    </div>
+  );
 }
 
 /**
@@ -26,6 +79,28 @@ export default function ArtifactExplorer({
 }: Readonly<Props>) {
   const [active, setActive] = useState<string | null>(null);
   const [copied, setCopied] = useState(false);
+  const [collapsed, setCollapsed] = useState<Set<string>>(new Set());
+
+  const allDirs = useMemo(() => collectDirPaths(artifactOrder), [artifactOrder]);
+  const allCollapsed = allDirs.length > 0 && allDirs.every((d) => collapsed.has(d));
+
+  const toggleDir = (path: string) =>
+    setCollapsed((prev) => {
+      const next = new Set(prev);
+      if (next.has(path)) next.delete(path);
+      else next.add(path);
+      return next;
+    });
+
+  const toggleAll = () => setCollapsed(allCollapsed ? new Set() : new Set(allDirs));
+
+  const downloadAllZip = () => {
+    const entries = artifactOrder
+      .map((n) => artifacts[n])
+      .filter(Boolean)
+      .map((a) => ({ name: a.name, content: a.content }));
+    if (entries.length > 0) downloadZip(entries, "sdlc-artifacts.zip");
+  };
 
   useEffect(() => {
     if (!active && artifactOrder.length > 0) setActive(artifactOrder[0]);
@@ -66,14 +141,13 @@ export default function ArtifactExplorer({
           </span>
         </div>
         {count > 0 && (
-          <button
-            onClick={onSelectAll}
-            title="Select / clear all for publish"
-            className="inline-flex items-center gap-1.5 rounded-lg border border-white/10 bg-white/[0.03] px-2 py-1 text-[11px] font-semibold text-slate-300 transition hover:bg-white/[0.07]"
-          >
-            <SquareCheck className="h-3.5 w-3.5" />
-            {selected.size === count ? "Clear" : "All"}
-          </button>
+          <ExplorerToolbar
+            allCollapsed={allCollapsed}
+            selectedAll={selected.size === count}
+            onToggleAll={toggleAll}
+            onDownloadZip={downloadAllZip}
+            onSelectAll={onSelectAll}
+          />
         )}
       </div>
 
@@ -94,6 +168,8 @@ export default function ArtifactExplorer({
               onOpen={setActive}
               selected={selected}
               onToggleSelect={onToggleSelect}
+              collapsed={collapsed}
+              onToggleDir={toggleDir}
             />
           </div>
 

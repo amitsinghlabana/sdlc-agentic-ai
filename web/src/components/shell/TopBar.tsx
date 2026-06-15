@@ -1,5 +1,4 @@
 import type { ReactNode } from "react";
-import { motion } from "framer-motion";
 import { Boxes } from "lucide-react";
 import { Link } from "../../lib/router";
 
@@ -10,14 +9,9 @@ import { Link } from "../../lib/router";
 export function BrandMark({ subtitle }: Readonly<{ subtitle?: string }>) {
   return (
     <Link to="/" className="flex items-center gap-3">
-      <motion.span
-        initial={{ rotate: -8, scale: 0.9, opacity: 0 }}
-        animate={{ rotate: 0, scale: 1, opacity: 1 }}
-        transition={{ type: "spring", stiffness: 200, damping: 14 }}
-        className="grid h-10 w-10 place-items-center rounded-2xl bg-gradient-to-br from-accent-500 to-accent-600 shadow-glow-accent"
-      >
+      <span className="grid h-10 w-10 place-items-center rounded-2xl bg-gradient-to-br from-accent-500 to-accent-600 shadow-glow-accent">
         <Boxes className="h-5 w-5 text-white" />
-      </motion.span>
+      </span>
       <span className="leading-tight">
         <span className="block text-[15px] font-extrabold tracking-tight text-slate-50">
           SDLC Agentic AI

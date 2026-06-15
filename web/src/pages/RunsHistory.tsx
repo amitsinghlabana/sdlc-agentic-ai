@@ -1,7 +1,6 @@
 import { useMemo, useState } from "react";
-import { motion } from "framer-motion";
-import { ArrowLeft, Play, RotateCcw, Search, Trash2 } from "lucide-react";
-import { Link, useRouter } from "../lib/router";
+import { ArrowLeft, Play, Search, Trash2 } from "lucide-react";
+import { Link } from "../lib/router";
 import { useRuns, clearRuns, type RunRecord } from "../store/useRunStore";
 import { toast } from "../store/toast";
 import RunStatusBadge from "../components/runs/RunStatusBadge";
@@ -32,7 +31,6 @@ function fmtWhen(ts: number): string {
 
 export default function RunsHistory() {
   const runs = useRuns();
-  const { navigate } = useRouter();
   const [filter, setFilter] = useState<Filter>("all");
   const [query, setQuery] = useState("");
 
@@ -45,11 +43,6 @@ export default function RunsHistory() {
     );
   }, [runs, filter, query]);
 
-  const rerun = (r: RunRecord) => {
-    const snippet = r.request.length > 40 ? r.request.slice(0, 40) + "…" : r.request;
-    toast.success(`Re-running: ${snippet}`);
-    navigate("/app");
-  };
 
   return (
     <div className="relative min-h-full">
@@ -138,16 +131,12 @@ export default function RunsHistory() {
                     <th className="px-4 py-3 font-semibold">Duration</th>
                     <th className="px-4 py-3 font-semibold">Files</th>
                     <th className="hidden px-4 py-3 font-semibold md:table-cell">Started</th>
-                    <th className="px-4 py-3" />
                   </tr>
                 </thead>
                 <tbody>
-                  {filtered.map((r, i) => (
-                    <motion.tr
+                  {filtered.map((r) => (
+                    <tr
                       key={r.id}
-                      initial={{ opacity: 0 }}
-                      animate={{ opacity: 1 }}
-                      transition={{ duration: 0.25, delay: Math.min(i * 0.03, 0.3) }}
                       className="border-b border-white/5 transition hover:bg-white/[0.03]"
                     >
                       <td className="max-w-[320px] px-4 py-3">
@@ -158,20 +147,11 @@ export default function RunsHistory() {
                       <td className="px-4 py-3 text-slate-300">{fmtDuration(r.durationMs)}</td>
                       <td className="px-4 py-3 text-slate-300">{r.artifacts}</td>
                       <td className="hidden px-4 py-3 text-slate-400 md:table-cell">{fmtWhen(r.startedAt)}</td>
-                      <td className="px-4 py-3 text-right">
-                        <button
-                          onClick={() => rerun(r)}
-                          title="Re-run"
-                          className="inline-flex items-center gap-1 rounded-lg border border-white/10 bg-white/[0.04] px-2.5 py-1.5 text-xs font-semibold text-slate-200 transition hover:bg-white/[0.08]"
-                        >
-                          <RotateCcw className="h-3.5 w-3.5" /> Re-run
-                        </button>
-                      </td>
-                    </motion.tr>
+                    </tr>
                   ))}
                   {filtered.length === 0 && (
                     <tr>
-                      <td colSpan={6} className="px-4 py-10 text-center text-sm text-slate-500">
+                      <td colSpan={5} className="px-4 py-10 text-center text-sm text-slate-500">
                         No runs match the current filter.
                       </td>
                     </tr>

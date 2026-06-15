@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useState } from "react";
 import { toast } from "../store/toast";
+import { confirm } from "../store/confirm";
 import type { JiraCreatedResult, StoryBundle } from "../lib/types";
 
 export interface JiraStatus {
@@ -43,9 +44,11 @@ export function useJira() {
       if (creating || !bundle || (bundle.stories ?? []).length === 0) return;
       // Confirm before writing to a REAL board.
       if (status && !status.is_mock) {
-        const ok = globalThis.confirm(
-          `Create ${bundle.stories.length} stories in JIRA (${status.host} / ${status.project_key})?`,
-        );
+        const ok = await confirm({
+          title: "Create JIRA stories",
+          message: `Create ${bundle.stories.length} stories in JIRA (${status.host} / ${status.project_key})?`,
+          confirmLabel: "Create",
+        });
         if (!ok) return;
       }
       setCreating(true);

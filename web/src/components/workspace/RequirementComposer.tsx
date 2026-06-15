@@ -11,10 +11,9 @@ const SAMPLES = [
       "Build a login API with JWT auth, refresh token support, role-based access, validation, unit tests, and API docs.",
   },
   {
-    label: "Payment service",
-    title: "Payment service",
-    value:
-      "Create a payment service with charge and refund endpoints, idempotency keys, webhook handling, and tests.",
+    label: "Todo API",
+    title: "Todo API",
+    value: "Create a small REST API to add, list, and delete todo items, with tests.",
   },
   {
     label: "Contact form",
@@ -175,7 +174,7 @@ export default function RequirementComposer({
           onKeyDown={onKeyDown}
           rows={3}
           disabled={running}
-          placeholder={"Describe the feature you want to build…\nExample: Build a login API with JWT auth, refresh token support, role-based access, validation, unit tests, and API docs."}
+          placeholder={"Describe the feature you want to build…\nTip: one or two sentences is plenty — or pick a sample below to get started."}
           className="w-full resize-y rounded-xl border border-white/10 bg-ink-900/60 py-3 pl-10 pr-3 text-sm text-slate-100 placeholder:text-slate-500 focus:border-accent-500 focus:outline-none focus:ring-2 focus:ring-accent-500/30 disabled:opacity-60"
         />
       </div>

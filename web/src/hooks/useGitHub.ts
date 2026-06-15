@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useState } from "react";
 import { toast } from "../store/toast";
+import { confirm } from "../store/confirm";
 import type { Artifact, PublishOptions, PublishResult } from "../lib/types";
 
 interface GitHubStatus {
@@ -59,7 +60,12 @@ export function useGitHub() {
         } else {
           action = `open a PR against ${repo}`;
         }
-        if (!globalThis.confirm(`Publish ${list.length} file(s) to GitHub — ${action}?`)) return;
+        const ok = await confirm({
+          title: "Publish to GitHub",
+          message: `Publish ${list.length} file(s) to GitHub — ${action}?`,
+          confirmLabel: "Publish",
+        });
+        if (!ok) return;
       }
 
       setPublishing(true);

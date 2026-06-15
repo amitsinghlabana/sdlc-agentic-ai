@@ -27,12 +27,57 @@ const COLORS: Record<string, string> = {
 // text-violet-300) and corrupt the HTML — which leaked stray `300">` text.
 const KEYWORD_SET = new Set(
   (
+    // Python
     "def class return import from as if elif else for while try except finally raise " +
-    "with async await lambda yield pass break continue in is not and or None True False " +
-    "self const let var function export default new typeof interface type extends " +
-    "implements public private void null undefined this"
+    "with async await lambda yield pass break continue in is not and or None True False self " +
+    // JS / TS
+    "const let var function export default new typeof interface type extends implements " +
+    "public private protected void null undefined this super readonly enum namespace " +
+    "static get set keyof as satisfies declare module " +
+    // Go
+    "func struct map range chan go defer select package var const fallthrough goto " +
+    // Rust
+    "fn impl trait mut pub use mod crate where dyn move ref match loop unsafe " +
+    "Some None Ok Err Option Result Box Vec String " +
+    // Java / C# / C / C++
+    "abstract final synchronized volatile transient native throws switch case instanceof " +
+    "using override virtual sealed partial namespace struct template typename include " +
+    "int long short double float boolean char byte unsigned signed bool string " +
+    // Ruby
+    "end module require do nil unless until elsif when then begin rescue ensure attr_accessor " +
+    // PHP
+    "echo foreach elseif endif endforeach use trait " +
+    // Kotlin / Swift
+    "fun val when object companion data suspend init deinit guard protocol extension " +
+    // common
+    "throw catch finally"
   ).split(" ")
 );
+
+// Normalize incoming language labels/aliases to a small canonical set the
+// highlighter understands. Unknown languages still render (as plain code) fine.
+const LANG_ALIASES: Record<string, string> = {
+  js: "javascript", jsx: "javascript", mjs: "javascript", cjs: "javascript",
+  ts: "typescript", tsx: "typescript",
+  py: "python", rb: "ruby", rs: "rust", kt: "kotlin", "c#": "csharp", cs: "csharp",
+  "c++": "cpp", cxx: "cpp", cc: "cpp", hpp: "cpp", golang: "go", yml: "yaml",
+  sh: "bash", shell: "bash", zsh: "bash", ps1: "powershell",
+  htm: "html", xml: "markup", vue: "markup", svelte: "markup",
+  md: "markdown", txt: "text",
+};
+function normLang(language: string): string {
+  const l = (language || "").toLowerCase();
+  return LANG_ALIASES[l] ?? l;
+}
+
+// Languages whose line comments start with `#` vs `//`.
+const HASH_COMMENT = new Set([
+  "python", "yaml", "bash", "ruby", "perl", "r", "toml", "ini", "makefile", "dockerfile",
+]);
+const SLASH_COMMENT = new Set([
+  "javascript", "typescript", "java", "go", "rust", "csharp", "cpp", "c", "php",
+  "kotlin", "swift", "scala", "dart", "graphql", "css", "scss", "less",
+]);
 
 function escapeHtml(s: string): string {
   return s.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
@@ -111,21 +156,31 @@ function hlMarkup(line: string): string {
   return out;
 }
 
+/** Full-line comment for the language, or null if the line isn't one. */
+function lineComment(line: string, lang: string): string | null {
+  if (HASH_COMMENT.has(lang)) {
+    const m = /^(\s*)(#.*)$/.exec(line);
+    if (m) return escapeHtml(m[1]) + wrap(COLORS.comment, m[2]);
+  }
+  if (SLASH_COMMENT.has(lang)) {
+    const m = /^(\s*)(\/\/.*)$/.exec(line);
+    if (m) return escapeHtml(m[1]) + wrap(COLORS.comment, m[2]);
+  }
+  return null;
+}
+
 /** Highlight one line; returns an HTML string with colored spans. */
-function highlightLine(line: string, lang: string): string {
+function highlightLine(line: string, language: string): string {
+  const lang = normLang(language);
   if (lang === "markdown") {
     if (/^#{1,6}\s/.test(line)) return wrap(COLORS.heading, line);
-    const bullet = line.match(/^(\s*[-*]\s)(.*)$/);
+    const bullet = /^(\s*[-*]\s)(.*)$/.exec(line);
     if (bullet) return wrap(COLORS.keyword, bullet[1]) + escapeHtml(bullet[2]);
     return escapeHtml(line);
   }
 
-  // Full-line comments
-  const hashComment = (lang === "python" || lang === "yaml") && line.match(/^(\s*)(#.*)$/);
-  if (hashComment) return escapeHtml(hashComment[1]) + wrap(COLORS.comment, hashComment[2]);
-  const slashComment =
-    (lang === "javascript" || lang === "typescript") && line.match(/^(\s*)(\/\/.*)$/);
-  if (slashComment) return escapeHtml(slashComment[1]) + wrap(COLORS.comment, slashComment[2]);
+  const comment = lineComment(line, lang);
+  if (comment !== null) return comment;
 
   // HTML / markup
   if (lang === "html" || lang === "markup") return hlMarkup(line);
@@ -155,7 +210,7 @@ export default function CodeBlock({
   language: string;
 }) {
   const lines = useMemo(() => content.replace(/\n$/, "").split("\n"), [content]);
-  const isProse = language === "markdown" || language === "text";
+  const isProse = normLang(language) === "markdown" || normLang(language) === "text";
 
   return (
     <div className="code-scroll h-full overflow-auto p-4 font-mono text-[12.5px] leading-[1.6]">

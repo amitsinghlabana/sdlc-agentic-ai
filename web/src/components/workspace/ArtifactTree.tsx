@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useMemo } from "react";
 import {
   BookOpen,
   ChevronRight,
@@ -18,6 +18,23 @@ interface Props {
   onOpen: (name: string) => void;
   selected: Set<string>;
   onToggleSelect: (name: string) => void;
+  /** Set of collapsed directory paths (controlled by the parent). */
+  collapsed: Set<string>;
+  onToggleDir: (path: string) => void;
+}
+
+/** All directory paths in the tree (used by the parent's collapse/expand all). */
+export function collectDirPaths(order: string[]): string[] {
+  const dirs = new Set<string>();
+  for (const fullName of order) {
+    const parts = fullName.split("/");
+    let prefix = "";
+    for (let i = 0; i < parts.length - 1; i++) {
+      prefix = prefix ? `${prefix}/${parts[i]}` : parts[i];
+      dirs.add(prefix);
+    }
+  }
+  return [...dirs];
 }
 
 interface FileNode {
@@ -90,20 +107,13 @@ export default function ArtifactTree({
   onOpen,
   selected,
   onToggleSelect,
+  collapsed,
+  onToggleDir,
 }: Readonly<Props>) {
   const tree = useMemo(
     () => buildTree(artifactOrder, artifacts),
     [artifactOrder, artifacts],
   );
-  const [collapsed, setCollapsed] = useState<Set<string>>(new Set());
-
-  const toggleDir = (path: string) =>
-    setCollapsed((prev) => {
-      const next = new Set(prev);
-      if (next.has(path)) next.delete(path);
-      else next.add(path);
-      return next;
-    });
 
   const renderNodes = (nodes: TreeNode[], depth: number): React.ReactNode =>
     nodes.map((node) => {
@@ -113,7 +123,7 @@ export default function ArtifactTree({
         return (
           <div key={"d:" + node.path}>
             <button
-              onClick={() => toggleDir(node.path)}
+              onClick={() => onToggleDir(node.path)}
               style={pad}
               className="flex w-full items-center gap-1.5 rounded-md py-1.5 pr-2 text-left text-[13px] text-slate-300 transition hover:bg-white/[0.05]"
             >

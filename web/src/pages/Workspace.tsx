@@ -1,8 +1,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { FolderTree, Workflow } from "lucide-react";
 import RequirementComposer from "../components/workspace/RequirementComposer";
 import WorkspaceTopBar from "../components/workspace/WorkspaceTopBar";
-import Sidebar, { type SidebarJumpItem } from "../components/shell/Sidebar";
+import Sidebar from "../components/shell/Sidebar";
 import PipelineTracker from "../components/workspace/PipelineTracker";
 import ChatPipeline from "../components/workspace/ChatPipeline";
 import ArtifactExplorer from "../components/workspace/ArtifactExplorer";
@@ -18,13 +17,6 @@ import { useStoryBundle } from "../hooks/useStoryBundle";
 import { addRun, rid } from "../store/useRunStore";
 import { toast } from "../store/toast";
 
-type JumpTarget = "pipeline" | "files";
-
-/** In-page sections surfaced in the shared Sidebar's "On this page" group. */
-const JUMP_ITEMS: SidebarJumpItem[] = [
-  { id: "pipeline", label: "Pipeline", icon: Workflow },
-  { id: "files", label: "Files", icon: FolderTree },
-];
 
 function statusLabel(runStatus: string, durationMs: number | null): string {
   if (runStatus === "idle") return "idle";
@@ -67,10 +59,10 @@ export default function Workspace() {
   const running = runStatus === "running";
 
   // ---- Composer state (controlled, so the top bar can also Run/Stop) -------- #
+  // Start blank so the placeholder hint guides the user; sample chips or JIRA
+  // import can fill it in. (No pre-filled "actual prompt".)
   const [title, setTitle] = useState("");
-  const [value, setValue] = useState(
-    "Build a login API with JWT auth, refresh token support, role-based access, validation, unit tests, and API docs.",
-  );
+  const [value, setValue] = useState("");
   const [editRepo, setEditRepo] = useState(false);
   const [repo, setRepo] = useState("");
 
@@ -81,7 +73,6 @@ export default function Workspace() {
   // ---- Publish selection + drawer ------------------------------------------ #
   const [selected, setSelected] = useState<Set<string>>(new Set());
   const [publishOpen, setPublishOpen] = useState(false);
-  const [activeNav, setActiveNav] = useState<JumpTarget>("pipeline");
 
   // Seed the publish target: prefer the repo being edited, else the default.
   useEffect(() => {
@@ -133,7 +124,10 @@ export default function Workspace() {
 
   const handleRun = useCallback(() => {
     const req = value.trim();
-    if (!req) return;
+    if (!req) {
+      toast("Describe a feature to run the team — type a sentence or pick a sample below.");
+      return;
+    }
     const targetRepo = editRepo ? repo : undefined;
     lastReqRef.current = req;
     lastRepoRef.current = targetRepo ?? null;
@@ -190,21 +184,12 @@ export default function Workspace() {
     [selected, artifactOrder, artifacts],
   );
 
-  const jump = useCallback((id: JumpTarget) => {
-    setActiveNav(id);
-    document.getElementById(`${id}-col`)?.scrollIntoView({ behavior: "smooth", block: "start" });
-  }, []);
-
   const publishTitle = title.trim() || request || value;
 
   return (
     <div className="flex min-h-screen">
       {/* Shared left navigation — consistent across every in-app screen */}
-      <Sidebar
-        jumpItems={JUMP_ITEMS}
-        activeJump={activeNav}
-        onJump={(id) => jump(id as JumpTarget)}
-      />
+      <Sidebar />
 
       {/* Content column: workspace top bar + two-column body */}
       <div className="flex min-w-0 flex-1 flex-col">

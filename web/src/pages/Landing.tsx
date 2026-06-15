@@ -1,7 +1,6 @@
 import { motion } from "framer-motion";
 import { Link } from "../lib/router";
 import { ArrowRight, Github, Play, Sparkles } from "lucide-react";
-import Spotlight from "../components/landing/Spotlight";
 import HeroTerminal from "../components/landing/HeroTerminal";
 import FeatureGrid from "../components/landing/FeatureGrid";
 import HowItWorks from "../components/landing/HowItWorks";
@@ -11,7 +10,6 @@ import TopBar from "../components/shell/TopBar";
 export default function Landing() {
   return (
     <div className="relative min-h-full overflow-hidden">
-      <Spotlight />
 
       {/* Nav */}
       <TopBar

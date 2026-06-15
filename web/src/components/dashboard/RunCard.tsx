@@ -1,6 +1,4 @@
-import { motion } from "framer-motion";
-import { ArrowRight, Clock, FileCode2, FolderGit2 } from "lucide-react";
-import { Link } from "../../lib/router";
+import { Clock, FileCode2, FolderGit2 } from "lucide-react";
 import type { RunRecord } from "../../store/useRunStore";
 
 const STATUS: Record<RunRecord["status"], { label: string; cls: string }> = {
@@ -23,15 +21,10 @@ function fmtDuration(ms: number | null): string {
   return ms == null ? "—" : `${(ms / 1000).toFixed(1)}s`;
 }
 
-export default function RunCard({ run, delay = 0 }: Readonly<{ run: RunRecord; delay?: number }>) {
+export default function RunCard({ run }: Readonly<{ run: RunRecord }>) {
   const status = STATUS[run.status];
   return (
-    <motion.div
-      initial={{ opacity: 0, y: 12 }}
-      animate={{ opacity: 1, y: 0 }}
-      transition={{ duration: 0.32, delay }}
-      className="group flex items-center gap-4 rounded-2xl border border-white/10 bg-white/[0.03] p-4 backdrop-blur-xl transition hover:border-accent/40 hover:bg-white/[0.05]"
-    >
+    <div className="flex items-center gap-4 rounded-2xl border border-white/10 bg-white/[0.03] p-4 backdrop-blur-xl transition hover:border-accent/40 hover:bg-white/[0.05]">
       <div className="min-w-0 flex-1">
         <div className="flex items-center gap-2">
           <span
@@ -57,13 +50,7 @@ export default function RunCard({ run, delay = 0 }: Readonly<{ run: RunRecord; d
           <span>{timeAgo(run.startedAt)}</span>
         </div>
       </div>
-      <Link
-        to="/app"
-        className="inline-flex shrink-0 items-center gap-1 rounded-lg border border-white/10 bg-white/[0.04] px-3 py-1.5 text-xs font-semibold text-slate-200 opacity-0 transition group-hover:opacity-100 hover:bg-white/[0.08]"
-      >
-        Open <ArrowRight className="h-3.5 w-3.5" />
-      </Link>
-    </motion.div>
+    </div>
   );
 }
 

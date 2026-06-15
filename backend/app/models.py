@@ -39,19 +39,67 @@ def clip(text: str, limit: int = 4000) -> str:
     return text[:limit] + "\n... [truncated] ..."
 
 
-# Extension → (type, language) for files read back from an existing repo.
+# Extension → (type, language) for files read back from an existing repo AND for
+# normalizing the artifacts agents generate (so a file's path is the source of
+# truth for its language, even if the model mislabels it).
 _EXT_MAP: dict[str, tuple[str, str]] = {
-    ".py": ("code", "python"), ".js": ("code", "javascript"), ".jsx": ("code", "javascript"),
+    # Python
+    ".py": ("code", "python"), ".pyi": ("code", "python"),
+    # JS / TS
+    ".js": ("code", "javascript"), ".jsx": ("code", "javascript"),
     ".mjs": ("code", "javascript"), ".cjs": ("code", "javascript"),
     ".ts": ("code", "typescript"), ".tsx": ("code", "typescript"),
-    ".html": ("code", "html"), ".htm": ("code", "html"), ".css": ("code", "css"),
-    ".json": ("config", "json"), ".yaml": ("config", "yaml"), ".yml": ("config", "yaml"),
+    ".vue": ("code", "vue"), ".svelte": ("code", "svelte"),
+    # Web
+    ".html": ("code", "html"), ".htm": ("code", "html"),
+    ".css": ("code", "css"), ".scss": ("code", "scss"), ".sass": ("code", "scss"),
+    ".less": ("code", "less"), ".xml": ("code", "xml"),
+    # JVM
+    ".java": ("code", "java"), ".kt": ("code", "kotlin"), ".kts": ("code", "kotlin"),
+    ".scala": ("code", "scala"), ".groovy": ("code", "groovy"), ".gradle": ("config", "groovy"),
+    # Systems
+    ".go": ("code", "go"), ".rs": ("code", "rust"),
+    ".c": ("code", "c"), ".h": ("code", "c"),
+    ".cpp": ("code", "cpp"), ".cc": ("code", "cpp"), ".cxx": ("code", "cpp"),
+    ".hpp": ("code", "cpp"), ".hh": ("code", "cpp"),
+    ".cs": ("code", "csharp"), ".swift": ("code", "swift"), ".m": ("code", "objectivec"),
+    # Scripting / other
+    ".rb": ("code", "ruby"), ".php": ("code", "php"), ".pl": ("code", "perl"),
+    ".lua": ("code", "lua"), ".r": ("code", "r"), ".dart": ("code", "dart"),
+    ".ex": ("code", "elixir"), ".exs": ("code", "elixir"), ".clj": ("code", "clojure"),
+    ".sh": ("code", "bash"), ".bash": ("code", "bash"), ".zsh": ("code", "bash"),
+    ".ps1": ("code", "powershell"), ".bat": ("code", "batch"), ".cmd": ("code", "batch"),
+    ".sql": ("code", "sql"), ".graphql": ("code", "graphql"), ".gql": ("code", "graphql"),
+    ".proto": ("code", "protobuf"),
+    # Config / data
+    ".json": ("config", "json"), ".jsonc": ("config", "json"),
+    ".yaml": ("config", "yaml"), ".yml": ("config", "yaml"),
     ".toml": ("config", "toml"), ".ini": ("config", "ini"), ".cfg": ("config", "ini"),
-    ".md": ("doc", "markdown"), ".markdown": ("doc", "markdown"), ".txt": ("doc", "text"),
-    ".java": ("code", "java"), ".go": ("code", "go"), ".rb": ("code", "ruby"),
-    ".rs": ("code", "rust"), ".php": ("code", "php"), ".cs": ("code", "csharp"),
-    ".sh": ("code", "bash"), ".sql": ("code", "sql"),
+    ".env": ("config", "bash"), ".tf": ("config", "terraform"), ".hcl": ("config", "terraform"),
+    # Docs
+    ".md": ("doc", "markdown"), ".markdown": ("doc", "markdown"),
+    ".rst": ("doc", "text"), ".txt": ("doc", "text"),
 }
+
+# Extensionless / special filenames → (type, language).
+_NAME_MAP: dict[str, tuple[str, str]] = {
+    "dockerfile": ("config", "dockerfile"),
+    "makefile": ("config", "makefile"),
+    "procfile": ("config", "yaml"),
+    ".gitignore": ("config", "text"), ".dockerignore": ("config", "text"),
+    ".env": ("config", "bash"), ".env.example": ("config", "bash"),
+    "requirements.txt": ("config", "text"), "go.mod": ("config", "text"), "go.sum": ("config", "text"),
+}
+
+
+def _type_language_for(path: str) -> tuple[Optional[str], Optional[str]]:
+    """Return (type, language) for a path from its filename/extension, or
+    (None, None) when unknown."""
+    base = path.rsplit("/", 1)[-1].lower()
+    if base in _NAME_MAP:
+        return _NAME_MAP[base]
+    ext = "." + base.rsplit(".", 1)[-1] if "." in base else ""
+    return _EXT_MAP.get(ext, (None, None))
 
 
 def _is_test_path(path: str) -> bool:
@@ -60,6 +108,7 @@ def _is_test_path(path: str) -> bool:
     return (
         base.startswith("test_")
         or base.endswith("_test.py")
+        or base.endswith("_test.go")
         or ".test." in base
         or ".spec." in base
         or "/tests/" in p
@@ -73,14 +122,34 @@ def infer_artifact(path: str, content: str = "") -> "Artifact":
 
     Used when reading existing repository files into the pipeline as context.
     """
-    ext = ""
-    base = path.rsplit("/", 1)[-1]
-    if "." in base:
-        ext = "." + base.rsplit(".", 1)[-1].lower()
-    type_, language = _EXT_MAP.get(ext, ("code", "text"))
+    type_, language = _type_language_for(path)
+    type_ = type_ or "code"
+    language = language or "text"
     if _is_test_path(path) and type_ == "code":
         type_ = "test"
     return Artifact(name=path, type=type_, language=language, content=content)
+
+
+def refine_artifact(art: "Artifact") -> "Artifact":
+    """Normalize a generated artifact's type/language from its filename.
+
+    Agents sometimes omit or mislabel ``language``/``type``; the file's path is a
+    more reliable signal, so we derive them from the extension when it's known.
+    Keeps the model's values for unknown extensions, and always honors test paths.
+    """
+    etype, elang = _type_language_for(art.name)
+    if elang:
+        art.language = elang
+    elif not art.language:
+        art.language = "text"
+    if etype:
+        art.type = etype
+    elif not art.type:
+        art.type = "code"
+    # A file under tests/ (or named *_test/*.spec) is a test, even if tagged code.
+    if (art.type in {"code", "test"}) and (_is_test_path(art.name)):
+        art.type = "test"
+    return art
 
 
 class WorkPackage:
