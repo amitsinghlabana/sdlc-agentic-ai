@@ -1,9 +1,14 @@
 """Vanilla OpenAI provider (used when LLM_PROVIDER=openai)."""
 from __future__ import annotations
 
+import logging
+import time
+
 from ..config import Settings
 from ..net import build_ssl_verify
 from .base import LLMProvider
+
+logger = logging.getLogger("sdlc.llm")
 
 
 class OpenAIProvider(LLMProvider):
@@ -17,14 +22,25 @@ class OpenAIProvider(LLMProvider):
         self._settings = settings
         self._model = settings.openai_model
         self.label = f"OpenAI · {self._model}"
+        # Short connect phase so a blocked/proxied network fails fast; longer read
+        # budget for generation.
+        timeout = httpx.Timeout(settings.request_timeout, connect=settings.llm_connect_timeout)
+        limits = httpx.Limits() if settings.llm_http_keepalive else httpx.Limits(max_keepalive_connections=0)
         http_client = httpx.AsyncClient(
             verify=build_ssl_verify(settings.llm_ca_bundle, settings.llm_verify_ssl),
-            timeout=settings.request_timeout,
+            timeout=timeout,
+            limits=limits,
         )
         self._client = AsyncOpenAI(
             api_key=settings.openai_api_key,
-            timeout=settings.request_timeout,
+            timeout=timeout,
+            max_retries=settings.llm_max_retries,
             http_client=http_client,
+        )
+        logger.info(
+            "OpenAI ready: model=%s (connect=%ss read=%ss retries=%s)",
+            self._model, settings.llm_connect_timeout, settings.request_timeout,
+            settings.llm_max_retries,
         )
 
     async def complete(
@@ -47,6 +63,18 @@ class OpenAIProvider(LLMProvider):
         }
         if json_mode:
             kwargs["response_format"] = {"type": "json_object"}
-        resp = await self._client.chat.completions.create(**kwargs)
-        return resp.choices[0].message.content or ""
+        logger.info("OpenAI call → tag=%s model=%s max_tokens=%s",
+                    tag or "?", self._model, kwargs["max_tokens"])
+        t0 = time.perf_counter()
+        try:
+            resp = await self._client.chat.completions.create(**kwargs)
+        except Exception as exc:
+            dt = time.perf_counter() - t0
+            logger.error("OpenAI call ✗ tag=%s after %.1fs: %s: %s",
+                         tag or "?", dt, type(exc).__name__, exc)
+            raise
+        dt = time.perf_counter() - t0
+        content = resp.choices[0].message.content or ""
+        logger.info("OpenAI call ✓ tag=%s in %.1fs (%d chars)", tag or "?", dt, len(content))
+        return content
 

@@ -47,6 +47,9 @@ def _azure_settings(**overrides):
         azure_openai_endpoint="https://example.openai.azure.com/",
         azure_openai_deployment="gpt-4o-mini",
         request_timeout=30.0,
+        llm_connect_timeout=15.0,
+        llm_max_retries=1,
+        llm_http_keepalive=False,
         llm_ca_bundle="",
         llm_verify_ssl=True,
     )
@@ -69,6 +72,9 @@ def test_openai_provider_constructs_with_custom_http_client():
         openai_api_key="dummy",
         openai_model="gpt-4o-mini",
         request_timeout=30.0,
+        llm_connect_timeout=15.0,
+        llm_max_retries=1,
+        llm_http_keepalive=False,
         llm_ca_bundle="",
         llm_verify_ssl=True,
     )

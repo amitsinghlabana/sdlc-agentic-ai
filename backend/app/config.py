@@ -67,6 +67,18 @@ class Settings:
         self.code_max_tokens: int = int(os.getenv("LLM_CODE_MAX_TOKENS", "8000"))
         self.temperature: float = float(os.getenv("LLM_TEMPERATURE", "0.4"))
         self.request_timeout: float = float(os.getenv("LLM_TIMEOUT", "90"))
+        # Connect phase timeout (seconds). Kept short so a blocked/proxied network
+        # surfaces a fast, clear error instead of hanging on the full read timeout.
+        self.llm_connect_timeout: float = float(os.getenv("LLM_CONNECT_TIMEOUT", "15"))
+        # How many times the OpenAI SDK retries a failed call. Low by default so a
+        # persistent failure surfaces quickly rather than multiplying the wait.
+        self.llm_max_retries: int = int(os.getenv("LLM_MAX_RETRIES", "1"))
+        # HTTP keep-alive. Default OFF: corporate proxies often silently drop idle
+        # keep-alive connections, so reusing one HANGS the next call until timeout
+        # (observed on this network). A fresh connection per call avoids that; the
+        # per-call handshake cost is negligible for this app's low call volume. Set
+        # LLM_HTTP_KEEPALIVE=true on a clean network for marginally faster calls.
+        self.llm_http_keepalive: bool = _get_bool("LLM_HTTP_KEEPALIVE", False)
 
         # --- Orchestration behaviour ---
         self.max_review_loops: int = int(os.getenv("MAX_REVIEW_LOOPS", "2"))
