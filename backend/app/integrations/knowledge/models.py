@@ -30,6 +30,9 @@ class RetrievalResult(BaseModel):
     # Sub-queries the agentic retriever planned (Foundry IQ decomposes a query).
     subqueries: List[str] = Field(default_factory=list)
     provider: str = "mock"
+    # Non-empty when retrieval failed (e.g. the knowledge agent's model deployment
+    # is missing). Lets the UI/test endpoint surface *why* grounding was empty.
+    error: str = ""
 
     # -- prompt + artifact helpers ------------------------------------- #
     def as_prompt_block(self) -> str:

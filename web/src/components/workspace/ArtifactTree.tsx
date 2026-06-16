@@ -151,7 +151,7 @@ export default function ArtifactTree({
           style={pad}
           className={[
             "group flex items-center gap-2 rounded-md py-1.5 pr-2 text-[13px] transition",
-            isActive ? "bg-brand-500/15 ring-1 ring-brand-500/40" : "hover:bg-white/[0.05]",
+            isActive ? "bg-accent-500/15 ring-1 ring-accent-500/40" : "hover:bg-white/[0.05]",
           ].join(" ")}
         >
           <input

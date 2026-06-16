@@ -55,6 +55,11 @@ export default function Workspace() {
   const github = useGitHub();
   const jira = useJira();
   const storyBundle = useStoryBundle(artifacts);
+  // The JIRA issue imported into the composer (drives context-aware create:
+  // sub-tasks under a Story, stories under an Epic, vs. a fresh epic+stories).
+  const [importedIssue, setImportedIssue] = useState<
+    { key: string; type: string; summary?: string } | null
+  >(null);
 
   const running = runStatus === "running";
 
@@ -225,6 +230,7 @@ export default function Workspace() {
                 onRepoChange={setRepo}
                 repos={github.repos}
                 jira={jira.status}
+                onImported={setImportedIssue}
                 onRun={handleRun}
                 onStop={stop}
               />
@@ -237,7 +243,8 @@ export default function Workspace() {
                   jira={jira.status}
                   creating={jira.creating}
                   created={jira.created}
-                  onCreate={jira.createStories}
+                  imported={importedIssue}
+                  onCreate={(b) => jira.createStories(b, importedIssue)}
                 />
               )}
 

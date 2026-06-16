@@ -1,6 +1,6 @@
 import { motion } from "framer-motion";
 import { Loader2, Ticket } from "lucide-react";
-import type { JiraCreatedResult, StoryBundle } from "../lib/types";
+import type { ImportedIssue, JiraCreatedResult, StoryBundle } from "../lib/types";
 import type { JiraStatus } from "../hooks/useJira";
 
 interface Props {
@@ -8,35 +8,95 @@ interface Props {
   jira: JiraStatus | null;
   creating: boolean;
   created: JiraCreatedResult | null;
+  imported?: ImportedIssue | null;
   onCreate: (bundle: StoryBundle) => void;
+}
+
+interface Copy {
+  heading: string;
+  ctaLabel: string;
+  blurb: string;
+  showSubBadge: boolean;
+  showNewEpic: boolean;
+}
+
+/** Mock-or-live blurb shared by all branches. */
+function liveBlurb(jira: JiraStatus | null, fallback: string): string {
+  if (jira?.is_mock) return "Mock mode — creates demo keys, nothing leaves your machine.";
+  return fallback;
+}
+
+/** Context-aware copy: sub-tasks under a Story, stories under an Epic, or a new epic+stories. */
+function buildCopy(
+  bundle: StoryBundle,
+  jira: JiraStatus | null,
+  imported: ImportedIssue | null | undefined,
+  creating: boolean,
+): Copy {
+  const n = bundle.stories.length;
+  const story = n === 1 ? "story" : "stories";
+  const importType = (imported?.type ?? "").toLowerCase();
+  const isEpic = importType === "epic";
+  const isStory = !!imported && !isEpic;
+  const key = imported?.key ?? "";
+  const host = jira?.host ?? "JIRA";
+
+  if (isStory) {
+    const subTotal = bundle.stories.reduce(
+      (a, s) => a + (s.subtasks?.length ? s.subtasks.length : 1),
+      0,
+    );
+    const subWord = subTotal === 1 ? "sub-task" : "sub-tasks";
+    return {
+      heading: `${subTotal} ${subWord} ready for ${key}`,
+      ctaLabel: creating ? "Creating…" : `Add ${subTotal} ${subWord}`,
+      blurb: liveBlurb(jira, `Creates sub-tasks under existing story ${key} in ${host}.`),
+      showSubBadge: false,
+      showNewEpic: false,
+    };
+  }
+  if (isEpic) {
+    return {
+      heading: `${n} ${story} ready for epic ${key}`,
+      ctaLabel: creating ? "Creating…" : `Add ${n} to ${key}`,
+      blurb: liveBlurb(jira, `Links stories under existing epic ${key} in ${host}.`),
+      showSubBadge: true,
+      showNewEpic: false,
+    };
+  }
+  const liveFallback = jira ? `Creates real issues in ${jira.host} (${jira.project_key}).` : "JIRA status unavailable.";
+  return {
+    heading: `${n} ${story} ready for JIRA`,
+    ctaLabel: creating ? "Creating…" : `Create ${n} in JIRA`,
+    blurb: liveBlurb(jira, liveFallback),
+    showSubBadge: true,
+    showNewEpic: true,
+  };
 }
 
 /**
  * Human-in-the-loop "Push stories to JIRA" panel. Appears when a run produces a
  * `stories.json` artifact: review the generated stories/sub-tasks, then create
- * them in JIRA (optionally under a new epic) via useJira().createStories →
- * POST /api/jira/create-stories. Restores the action from the original UI.
+ * them in JIRA. Context-aware: an imported Epic links stories under it; an
+ * imported Story creates sub-tasks under it; otherwise a new epic + stories.
  */
 export default function JiraPublishPanel({
   bundle,
   jira,
   creating,
   created,
+  imported,
   onCreate,
 }: Readonly<Props>) {
   if (!bundle || (bundle.stories ?? []).length === 0) return null;
 
-  const n = bundle.stories.length;
   const subCount = bundle.stories.reduce((a, s) => a + (s.subtasks?.length ?? 0), 0);
-
-  let blurb: string;
-  if (jira?.is_mock) {
-    blurb = "Mock mode — creates demo keys, nothing leaves your machine.";
-  } else if (jira) {
-    blurb = `Creates real issues in ${jira.host} (${jira.project_key}).`;
-  } else {
-    blurb = "JIRA status unavailable.";
-  }
+  const { heading, ctaLabel, blurb, showSubBadge, showNewEpic } = buildCopy(
+    bundle,
+    jira,
+    imported,
+    creating,
+  );
 
   return (
     <motion.div
@@ -51,14 +111,14 @@ export default function JiraPublishPanel({
           </div>
           <div>
             <p className="text-sm font-semibold text-slate-100">
-              {n} story{n === 1 ? "" : "ies"} ready for JIRA
-              {subCount > 0 && (
+              {heading}
+              {showSubBadge && subCount > 0 && (
                 <span className="text-slate-400">
                   {" "}
                   · {subCount} sub-task{subCount === 1 ? "" : "s"}
                 </span>
               )}
-              {bundle.epic && (
+              {showNewEpic && bundle.epic && (
                 <span className="text-slate-400"> · under epic “{bundle.epic.summary}”</span>
               )}
             </p>
@@ -76,7 +136,7 @@ export default function JiraPublishPanel({
           className="inline-flex items-center gap-2 rounded-xl bg-gradient-to-b from-sky-500 to-sky-600 px-4 py-2.5 text-sm font-semibold text-white shadow-soft transition hover:-translate-y-0.5 disabled:cursor-not-allowed disabled:opacity-50"
         >
           {creating ? <Loader2 className="h-4 w-4 animate-spin" /> : <Ticket className="h-4 w-4" />}
-          {creating ? "Creating…" : `Create ${n} in JIRA`}
+          {ctaLabel}
         </button>
       </div>
 

@@ -197,6 +197,46 @@ def test_create_stories_endpoint_returns_keys():
     assert all(st["key"].startswith("DEMO-") for st in first["subtasks"])
 
 
+def test_create_stories_under_imported_epic_links_not_creates():
+    """Importing an Epic links stories under it and refreshes it — no new epic."""
+    reset_jira()
+    payload = {
+        "create_epic": True,
+        "epic": {"summary": "Login", "description": "Refined auth details"},
+        "stories": [{"summary": "Sign in"}, {"summary": "Validate input"}],
+        "import_key": "DEMO-1",
+        "import_type": "Epic",
+    }
+    data = client.post("/api/jira/create-stories", json=payload).json()
+    assert data["mode"] == "epic_children"
+    assert data["parent"] == "DEMO-1"
+    # The epic returned is the EXISTING one (DEMO-1), not a freshly-created key.
+    assert data["epic"]["key"] == "DEMO-1"
+    assert data["count"] == 2
+    assert all(c["issue_type"] == "Story" for c in data["created"])
+
+
+def test_create_stories_under_imported_story_makes_subtasks():
+    """Importing a Story creates sub-tasks under it — no new epic/stories."""
+    reset_jira()
+    payload = {
+        "epic": {"summary": "Login", "description": "Auth"},
+        "stories": [
+            {"summary": "Sign in", "subtasks": [{"summary": "Build UI"}, {"summary": "Add endpoint"}]},
+            {"summary": "Validate input"},
+        ],
+        "import_key": "DEMO-2",
+        "import_type": "Story",
+    }
+    data = client.post("/api/jira/create-stories", json=payload).json()
+    assert data["mode"] == "subtasks"
+    assert data["parent"] == "DEMO-2"
+    assert data["epic"] is None
+    # 2 explicit sub-tasks from the first story + 1 fallback from the second.
+    assert data["count"] == 3
+    assert all(c["issue_type"] == "Sub-task" for c in data["created"])
+
+
 def test_pipeline_emits_stories_json_artifact():
     resp = client.post("/api/run", json={"request": "Add a login page"}).json()
     names = {a["name"] for a in resp["artifacts"]}

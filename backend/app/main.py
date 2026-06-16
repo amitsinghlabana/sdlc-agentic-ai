@@ -109,12 +109,13 @@ async def knowledge_test(q: str = "secure login with email and password") -> dic
     try:
         result = await client.retrieve(q, top=settings.knowledge_top_k)
         return {
-            "ok": True,
+            "ok": not result.error,
             "provider": result.provider,
             "label": getattr(client, "label", result.provider),
             "count": len(result.citations),
             "subqueries": result.subqueries,
             "citations": [c.model_dump() for c in result.citations],
+            "error": result.error or None,
         }
     except Exception as exc:  # noqa: BLE001 — surface a readable reason
         logger.exception("Knowledge connectivity test failed")

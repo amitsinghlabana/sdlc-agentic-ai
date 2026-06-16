@@ -13,6 +13,7 @@ import type { Artifact } from "../../lib/types";
 import CodeBlock from "../CodeBlock";
 import ArtifactTree, { collectDirPaths } from "./ArtifactTree";
 import { downloadZip } from "../../lib/zip";
+import { promptText } from "../../store/prompt";
 
 interface Props {
   artifactOrder: string[];
@@ -94,12 +95,31 @@ export default function ArtifactExplorer({
 
   const toggleAll = () => setCollapsed(allCollapsed ? new Set() : new Set(allDirs));
 
-  const downloadAllZip = () => {
+  const downloadAllZip = async () => {
     const entries = artifactOrder
       .map((n) => artifacts[n])
       .filter(Boolean)
       .map((a) => ({ name: a.name, content: a.content }));
-    if (entries.length > 0) downloadZip(entries, "sdlc-artifacts.zip");
+    if (entries.length === 0) return;
+
+    // Let the user name the archive (themed prompt, not window.prompt).
+    const input = await promptText({
+      title: "Download artifacts",
+      message: `Name the archive for ${entries.length} file${entries.length === 1 ? "" : "s"}.`,
+      defaultValue: "sdlc-artifacts",
+      placeholder: "archive name",
+      suffix: ".zip",
+      confirmLabel: "Download",
+    });
+    if (input === null) return; // cancelled
+
+    // Sanitize: strip a typed .zip, drop path/illegal chars, fall back to default.
+    const base =
+      input
+        .replace(/\.zip$/i, "")
+        .replace(/[\\/:*?"<>|]+/g, "-")
+        .trim() || "sdlc-artifacts";
+    downloadZip(entries, `${base}.zip`);
   };
 
   useEffect(() => {

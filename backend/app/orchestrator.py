@@ -89,6 +89,7 @@ async def _ground(wp: WorkPackage) -> AsyncIterator[dict]:
         citations=wp.citations,
         subqueries=result.subqueries,
         count=len(result.citations),
+        error=result.error or None,
     )
     if result.citations:
         artifact = Artifact(

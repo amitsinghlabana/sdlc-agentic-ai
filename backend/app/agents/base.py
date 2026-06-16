@@ -171,12 +171,17 @@ class Agent:
     # response, which can be large. They use the bigger ``code_max_tokens`` budget
     # so the response isn't truncated (which would corrupt the JSON → lost files).
     emits_code: bool = False
+    # Non-code agents that still produce sizable structured output (e.g.
+    # Requirements emits requirements.md + a stories.json with sub-tasks) also use
+    # the larger budget so the LAST artifact isn't truncated away.
+    large_output: bool = False
 
     def user_prompt(self, wp: WorkPackage) -> str:  # pragma: no cover - overridden
         raise NotImplementedError
 
     async def run(self, wp: WorkPackage, llm: LLMProvider) -> AgentResult:
-        max_tokens = settings.code_max_tokens if self.emits_code else settings.max_tokens
+        big = self.emits_code or self.large_output
+        max_tokens = settings.code_max_tokens if big else settings.max_tokens
         raw = await llm.complete(
             self.system_prompt,
             self.user_prompt(wp),

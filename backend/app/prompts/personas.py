@@ -47,7 +47,9 @@ REQUIREMENTS = (
     '"description": str, "acceptance_criteria": [str], "story_points": int, '
     '"labels": [str], "issue_type": "Story", "subtasks": [{"summary": str}]}]}. '
     "For each story include 2–4 concrete implementation sub-tasks (e.g. build UI, "
-    "add API endpoint, write tests). Keep summaries under 255 chars."
+    "add API endpoint, write tests). Keep summaries under 255 chars. "
+    "IMPORTANT: name the second artifact EXACTLY `stories.json` at the repository "
+    "ROOT (no folder prefix) and emit raw JSON as its content (no markdown fences)."
     + SCHEMA_NOTE
 )
 

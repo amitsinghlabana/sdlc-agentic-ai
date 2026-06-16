@@ -93,7 +93,10 @@ class Settings:
         self.llm_http_keepalive: bool = _get_bool("LLM_HTTP_KEEPALIVE", False)
 
         # --- Orchestration behaviour ---
-        self.max_review_loops: int = int(os.getenv("MAX_REVIEW_LOOPS", "2"))
+        # Max Reviewer→Developer feedback cycles. With N, the reviewer runs up to
+        # N+1 times (1 initial + N re-reviews) and the developer applies up to N+1
+        # revisions (the last is the capped FINAL pass). Override via env.
+        self.max_review_loops: int = int(os.getenv("MAX_REVIEW_LOOPS", "3"))
         # Delay (seconds) between streamed text chunks — purely cosmetic so the
         # UI shows a lively "typing" effect. Set to 0 for fastest runs.
         self.stream_delay: float = float(os.getenv("STREAM_DELAY", "0.015"))
@@ -139,6 +142,13 @@ class Settings:
         self.foundry_index: str = os.getenv("FOUNDRY_INDEX", "").strip()
         self.foundry_api_version: str = os.getenv("FOUNDRY_API_VERSION", "2025-08-01-preview").strip()
         self.foundry_api_key: str = os.getenv("FOUNDRY_API_KEY", "").strip()
+        # The Azure OpenAI deployment the knowledge AGENT uses to plan sub-queries.
+        # This is independent of the main pipeline LLM (AZURE_OPENAI_DEPLOYMENT),
+        # because Foundry knowledge agents only support specific chat models
+        # (gpt-4o[-mini], gpt-4.1[-mini/-nano], gpt-5[-mini/-nano], …) — NOT codex
+        # models. Leave empty to reuse the main deployment.
+        self.foundry_agent_deployment: str = os.getenv("FOUNDRY_AGENT_DEPLOYMENT", "").strip()
+        self.foundry_agent_model_name: str = os.getenv("FOUNDRY_AGENT_MODEL_NAME", "").strip()
         # TLS reuse for the knowledge endpoint (mirrors LLM_*/JIRA_* handling).
         self.knowledge_ca_bundle: str = os.getenv("KNOWLEDGE_CA_BUNDLE", "").strip()
         self.knowledge_verify_ssl: bool = _get_bool("KNOWLEDGE_VERIFY_SSL", True)

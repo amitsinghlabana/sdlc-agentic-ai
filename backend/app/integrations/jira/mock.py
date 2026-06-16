@@ -10,7 +10,7 @@ from __future__ import annotations
 from typing import List, Optional
 
 from .base import JiraClient
-from .models import CreatedIssue, Epic, JiraIssue, Story
+from .models import CreatedIssue, Epic, JiraIssue, Story, Subtask
 
 _DEMO_HOST = "https://demo.atlassian.net"
 
@@ -128,6 +128,42 @@ class MockJiraClient(JiraClient):
                     assignee=assignee,
                 )
             )
+        self._created[key] = created
+        return created
+
+    async def update_issue(
+        self,
+        key: str,
+        *,
+        summary: Optional[str] = None,
+        description: str = "",
+        acceptance_criteria: Optional[List[str]] = None,
+    ) -> CreatedIssue:
+        key = key.strip().upper()
+        existing = self._issues.get(key)
+        if existing is not None:
+            if summary:
+                existing.summary = summary
+            if description:
+                existing.description_text = description
+            if acceptance_criteria:
+                existing.acceptance_criteria = acceptance_criteria
+        return CreatedIssue(
+            key=key,
+            url=self._url(key),
+            summary=summary or (existing.summary if existing else key),
+            issue_type=(existing.issue_type if existing else "Epic"),
+        )
+
+    async def create_subtask(self, subtask: Subtask, *, parent_key: str) -> CreatedIssue:
+        key = self._next_key()
+        created = CreatedIssue(
+            key=key,
+            url=self._url(key),
+            summary=subtask.summary,
+            issue_type="Sub-task",
+            assignee=self._display_assignee(self._default_assignee),
+        )
         self._created[key] = created
         return created
 

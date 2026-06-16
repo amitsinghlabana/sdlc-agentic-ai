@@ -128,6 +128,12 @@ class CloudJiraClient(JiraClient):
     async def _post_json(self, http: httpx.AsyncClient, path: str, **kw: Any) -> dict:
         return self._json_or_raise(await self._request(http, "POST", path, **kw))
 
+    async def _put(self, http: httpx.AsyncClient, path: str, **kw: Any) -> None:
+        """Send a PUT (e.g. issue update); raise on error. Returns no body (204)."""
+        resp = await self._request(http, "PUT", path, **kw)
+        if resp.status_code >= 400:
+            raise RuntimeError(self._error_message(resp))
+
     # ------------------------------------------------------------------ #
     # Inbound (read)
     # ------------------------------------------------------------------ #
@@ -271,5 +277,43 @@ class CloudJiraClient(JiraClient):
             sub_created.assignee = created.assignee
             created.subtasks.append(sub_created)
 
+        return created
+
+    async def update_issue(
+        self,
+        key: str,
+        *,
+        summary: Optional[str] = None,
+        description: str = "",
+        acceptance_criteria: Optional[List[str]] = None,
+    ) -> CreatedIssue:
+        key = key.strip().upper()
+        fields: dict = {}
+        if summary:
+            fields["summary"] = summary[:255]
+        if description or acceptance_criteria:
+            fields["description"] = build_adf(description, acceptance_criteria or [])
+
+        if fields and not self._dry_run:
+            async with self._client() as http:
+                await self._put(http, f"/issue/{key}", json={"fields": fields})
+        elif self._dry_run:
+            logger.info("[DRY-RUN] would update %s: %s", key, ", ".join(fields) or "(no changes)")
+
+        return CreatedIssue(
+            key=key, url=self._browse(key), summary=summary or key, issue_type="Epic"
+        )
+
+    async def create_subtask(self, subtask: Subtask, *, parent_key: str) -> CreatedIssue:
+        account_id = None if self._dry_run else await self._resolve_account_id(self._default_assignee)
+        fields = subtask_to_fields(
+            subtask,
+            project_key=self._project,
+            parent_key=parent_key,
+            subtask_type=self._subtask_type,
+            assignee_account_id=account_id,
+        )
+        created = await self._create(fields, summary=subtask.summary, issue_type=self._subtask_type)
+        created.assignee = self._display_assignee(self._default_assignee)
         return created
 

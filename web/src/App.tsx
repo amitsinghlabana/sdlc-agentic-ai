@@ -10,6 +10,7 @@ import AppShell from "./components/shell/AppShell";
 import CommandPalette from "./components/shell/CommandPalette";
 import ToastViewport from "./components/ui/ToastViewport";
 import ConfirmDialog from "./components/ui/ConfirmDialog";
+import PromptDialog from "./components/ui/PromptDialog";
 import Spotlight from "./components/landing/Spotlight";
 
 
@@ -45,6 +46,7 @@ export default function App() {
       <CommandPalette />
       <ToastViewport />
       <ConfirmDialog />
+      <PromptDialog />
     </>
   );
 }

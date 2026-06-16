@@ -19,7 +19,11 @@ def artifacts_to_files(artifacts: Iterable, *, skip: set[str] | None = None) -> 
     for a in artifacts:
         name = getattr(a, "name", None) if not isinstance(a, dict) else a.get("name")
         content = getattr(a, "content", None) if not isinstance(a, dict) else a.get("content")
-        if not name or name in skip:
+        if not name:
+            continue
+        # Skip by full path OR basename (e.g. a nested `docs/stories.json`).
+        basename = str(name).rsplit("/", 1)[-1]
+        if name in skip or basename in skip:
             continue
         if not (content or "").strip():
             continue

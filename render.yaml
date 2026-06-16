@@ -43,6 +43,10 @@ services:
         value: "2025-05-01-preview"    # code default is 2025-08-01-preview
       - key: KNOWLEDGE_TOP_K
         value: "4"
+      # Reviewer→Developer feedback cycles (code default is 3). Pinned so prod is
+      # explicit and you can tune it in the dashboard without a code change.
+      - key: MAX_REVIEW_LOOPS
+        value: "3"
       - key: JIRA_SUBTASK_ISSUE_TYPE
         value: "Subtask"               # code default is "Sub-task"
       - key: JIRA_DEFAULT_ASSIGNEE
@@ -75,6 +79,11 @@ services:
         sync: false
       - key: FOUNDRY_INDEX
         sync: false
+      # The knowledge agent's planner model (e.g. gpt-4o-mini) is bound ONCE at
+      # setup time via `scripts/setup_foundry_iq.py agent` (FOUNDRY_AGENT_DEPLOYMENT
+      # in your local .env / CI) — NOT here. The running web service only CALLS the
+      # already-bound agent, so it needs no deployment name. This is what lets the
+      # pipeline use a codex model while Foundry search uses a supported mini model.
       - key: FOUNDRY_KNOWLEDGE_AGENT
         sync: false
 

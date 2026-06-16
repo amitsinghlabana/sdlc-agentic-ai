@@ -180,12 +180,33 @@ class FoundryKnowledgeClient(KnowledgeClient):
             async with self._client() as http:
                 resp = await http.post(self._url(), json=self._build_body(query))
             if resp.status_code >= 400:
+                reason = self._error_reason(resp)
                 logger.warning("Foundry IQ retrieve -> %s: %s", resp.status_code, resp.text[:300])
-                return RetrievalResult(query=query, provider=self.name)
+                return RetrievalResult(
+                    query=query,
+                    provider=self.name,
+                    error=f"HTTP {resp.status_code}: {reason}"[:300],
+                )
             return self._parse(query, resp.json(), top)
-        except Exception:  # noqa: BLE001
+        except Exception as exc:  # noqa: BLE001
             logger.warning("Foundry IQ retrieve failed; running ungrounded.", exc_info=True)
-            return RetrievalResult(query=query, provider=self.name)
+            return RetrievalResult(
+                query=query, provider=self.name, error=f"{type(exc).__name__}: {exc}"[:300]
+            )
+
+    @staticmethod
+    def _error_reason(resp: httpx.Response) -> str:
+        """Pull a human-readable reason out of a Foundry/Azure error body."""
+        try:
+            body = resp.json()
+            err = body.get("error")
+            if isinstance(err, dict):
+                return str(err.get("message") or err.get("code") or resp.text)[:280]
+            if isinstance(err, str):
+                return err[:280]
+        except (ValueError, TypeError):
+            pass
+        return (resp.text or resp.reason_phrase or "request failed")[:280]
 
 
 

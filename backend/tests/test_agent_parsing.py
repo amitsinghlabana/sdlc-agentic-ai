@@ -10,6 +10,7 @@ import asyncio
 import json
 
 from app.agents.base import Agent, parse_json
+from app.agents.architect import ArchitectAgent
 from app.agents.developer import DeveloperAgent
 from app.agents.requirements import RequirementsAgent
 from app.agents.tester import TesterAgent
@@ -119,9 +120,18 @@ def test_code_agents_use_code_token_budget():
 def test_text_agents_use_general_token_budget():
     llm = _RecordingLLM('{"summary": "ok", "artifacts": []}')
     wp = WorkPackage("Build a todo app")
-    asyncio.run(RequirementsAgent().run(wp, llm))
+    asyncio.run(ArchitectAgent().run(wp, llm))
     assert llm.calls[0]["max_tokens"] == settings.max_tokens
     assert settings.code_max_tokens > settings.max_tokens
+
+
+def test_requirements_agent_uses_large_budget():
+    """Requirements emits requirements.md + stories.json; it must use the larger
+    budget so the second artifact (stories.json) isn't truncated away."""
+    llm = _RecordingLLM('{"summary": "ok", "artifacts": []}')
+    wp = WorkPackage("Build a todo app")
+    asyncio.run(RequirementsAgent().run(wp, llm))
+    assert llm.calls[0]["max_tokens"] == settings.code_max_tokens
 
 
 def test_run_sets_note_on_truncated_recovery():

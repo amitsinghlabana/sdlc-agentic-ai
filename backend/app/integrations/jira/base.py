@@ -4,7 +4,7 @@ from __future__ import annotations
 from abc import ABC, abstractmethod
 from typing import List, Optional
 
-from .models import CreatedIssue, Epic, JiraIssue, Story
+from .models import CreatedIssue, Epic, JiraIssue, Story, Subtask
 
 
 class JiraClient(ABC):
@@ -36,6 +36,23 @@ class JiraClient(ABC):
     async def create_issue(self, story: Story, *, parent_key: Optional[str] = None) -> CreatedIssue:
         raise NotImplementedError
 
+    @abstractmethod
+    async def update_issue(
+        self,
+        key: str,
+        *,
+        summary: Optional[str] = None,
+        description: str = "",
+        acceptance_criteria: Optional[List[str]] = None,
+    ) -> CreatedIssue:
+        """Update an existing issue's summary/description (e.g. an imported Epic)."""
+        raise NotImplementedError
+
+    @abstractmethod
+    async def create_subtask(self, subtask: Subtask, *, parent_key: str) -> CreatedIssue:
+        """Create a single Sub-task under an existing issue (e.g. an imported Story)."""
+        raise NotImplementedError
+
     async def bulk_create(
         self, stories: List[Story], *, parent_key: Optional[str] = None
     ) -> List[CreatedIssue]:
@@ -43,5 +60,14 @@ class JiraClient(ABC):
         created: List[CreatedIssue] = []
         for story in stories:
             created.append(await self.create_issue(story, parent_key=parent_key))
+        return created
+
+    async def bulk_create_subtasks(
+        self, subtasks: List[Subtask], *, parent_key: str
+    ) -> List[CreatedIssue]:
+        """Default: create sub-tasks one-by-one under the given parent issue."""
+        created: List[CreatedIssue] = []
+        for sub in subtasks:
+            created.append(await self.create_subtask(sub, parent_key=parent_key))
         return created
 

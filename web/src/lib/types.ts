@@ -151,6 +151,17 @@ export interface JiraCreatedResult {
   created: CreatedIssue[];
   count: number;
   provider: string;
+  /** How the issues were created: "new" | "epic_children" | "subtasks". */
+  mode?: string;
+  /** Parent issue key the created items were attached to (when applicable). */
+  parent?: string | null;
+}
+
+/** A JIRA issue imported into the Composer (drives context-aware create). */
+export interface ImportedIssue {
+  key: string;
+  type: string; // "Epic" | "Story" | ...
+  summary?: string;
 }
 
 // --- GitHub publish (selected artifacts → POST /api/github/publish) --------- #

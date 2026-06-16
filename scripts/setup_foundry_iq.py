@@ -45,6 +45,14 @@ from typing import List, Tuple
 
 import httpx
 
+# Windows consoles default to cp1252, which can't encode the ✓ / → / … glyphs we
+# print — that raises UnicodeEncodeError mid-run. Force UTF-8 so output is safe.
+for _stream in (sys.stdout, sys.stderr):
+    try:
+        _stream.reconfigure(encoding="utf-8")  # type: ignore[attr-defined]
+    except Exception:  # noqa: BLE001 — older Pythons / non-reconfigurable streams
+        pass
+
 # Make the app package importable so we reuse settings (.env/.env.local) + TLS.
 _ROOT = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(_ROOT / "backend"))
@@ -167,9 +175,26 @@ def create_agent() -> None:
             f"({settings.azure_openai_endpoint}). Set your REAL endpoint in .env "
             "(Azure portal → your OpenAI resource → Keys and Endpoint)."
         )
-    model_name = os.getenv("AZURE_OPENAI_MODEL_NAME", settings.azure_openai_deployment)
+    # The knowledge agent's planner model is decoupled from the main pipeline
+    # LLM: Foundry supports only specific chat models (gpt-4o[-mini],
+    # gpt-4.1[-mini/-nano], gpt-5[-mini/-nano], …) — NOT codex models. Use the
+    # dedicated FOUNDRY_AGENT_DEPLOYMENT when set, else the main deployment.
+    deployment_id = settings.foundry_agent_deployment or settings.azure_openai_deployment
+    model_name = (
+        settings.foundry_agent_model_name
+        or os.getenv("AZURE_OPENAI_MODEL_NAME", "")
+        or deployment_id
+    )
+    if "codex" in (model_name or "").lower() or "codex" in (deployment_id or "").lower():
+        sys.exit(
+            "ERROR: Foundry knowledge agents do not support codex models "
+            f"(got deployment '{deployment_id}', model '{model_name}').\n"
+            "Create a supported Azure OpenAI deployment (e.g. gpt-4o-mini or "
+            "gpt-4.1-mini) and set FOUNDRY_AGENT_DEPLOYMENT (and optionally "
+            "FOUNDRY_AGENT_MODEL_NAME) in .env.local, then re-run this command."
+        )
     print(f"Creating knowledge agent '{agent}' bound to deployment "
-          f"'{settings.azure_openai_deployment}' over index '{index}' …")
+          f"'{deployment_id}' (model '{model_name}') over index '{index}' …")
     body = {
         "name": agent,
         "targetIndexes": [{"indexName": index, "defaultRerankerThreshold": 1.5}],
@@ -178,7 +203,7 @@ def create_agent() -> None:
                 "kind": "azureOpenAI",
                 "azureOpenAIParameters": {
                     "resourceUri": settings.azure_openai_endpoint.rstrip("/"),
-                    "deploymentId": settings.azure_openai_deployment,
+                    "deploymentId": deployment_id,
                     "modelName": model_name,
                     "apiKey": settings.azure_openai_api_key,
                 },

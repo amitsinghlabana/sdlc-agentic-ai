@@ -39,6 +39,7 @@ interface Props {
   onRepoChange: (v: string) => void;
   repos: string[];
   jira: JiraStatus | null;
+  onImported?: (issue: { key: string; type: string; summary?: string } | null) => void;
   onRun: () => void;
   onStop: () => void;
 }
@@ -60,6 +61,7 @@ export default function RequirementComposer({
   onRepoChange,
   repos,
   jira,
+  onImported,
   onRun,
   onStop,
 }: Readonly<Props>) {
@@ -83,6 +85,11 @@ export default function RequirementComposer({
       const data = await r.json();
       onValueChange(data.request ?? "");
       if (data.issue?.summary) onTitleChange(data.issue.summary);
+      onImported?.(
+        data.issue?.key
+          ? { key: data.issue.key, type: data.issue.type ?? "Story", summary: data.issue.summary }
+          : null,
+      );
       toast.success(`Imported ${data.issue?.key ?? key} from JIRA`);
     } catch (e) {
       toast.error("Import failed: " + (e as Error).message);
@@ -170,7 +177,10 @@ export default function RequirementComposer({
         <Wand2 className="pointer-events-none absolute left-3.5 top-3.5 h-4 w-4 text-accent-400" />
         <textarea
           value={value}
-          onChange={(e) => onValueChange(e.target.value)}
+          onChange={(e) => {
+            onValueChange(e.target.value);
+            onImported?.(null);
+          }}
           onKeyDown={onKeyDown}
           rows={3}
           disabled={running}
@@ -189,6 +199,7 @@ export default function RequirementComposer({
               onClick={() => {
                 onValueChange(s.value);
                 onTitleChange(s.title);
+                onImported?.(null);
               }}
             >
               {s.label}
